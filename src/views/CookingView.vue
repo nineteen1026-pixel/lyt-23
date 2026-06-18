@@ -33,7 +33,6 @@ const stepCompleted = ref([false, false, false, false]);
 const showFinishModal = ref(false);
 const showUnlockModal = ref(false);
 const pendingUnlockItems = ref<UnlockItem[]>([]);
-const isFirstCheckIn = ref(true);
 
 const activeApronData = computed(() =>
   unlocks.aprons.find((a) => a.id === store.activeApron) ?? unlocks.aprons[0],
@@ -97,8 +96,8 @@ function goNext() {
 }
 
 function handleCheckIn() {
+  if (store.isCheckedInToday) return;
   const result: UnlockResult = store.checkIn();
-  isFirstCheckIn.value = false;
   const items: UnlockItem[] = [];
   (result.newDecorations as Decoration[]).forEach((d) => {
     items.push({ type: 'decoration', name: d.name, emoji: d.emoji });
@@ -235,7 +234,7 @@ function handleCookMore() {
         v-if="showFinishModal"
         :dish-emoji="dish.emoji"
         :dish-name="dish.name"
-        :is-checked-in-today="store.isCheckedInToday && !isFirstCheckIn"
+        :is-checked-in-today="store.isCheckedInToday"
         @check-in="handleCheckIn"
         @back-home="handleBackHome"
         @cook-more="handleCookMore"

@@ -69,6 +69,7 @@ const afterRewardAction = ref<(() => void) | null>(null);
 const cookingStartTime = ref<number | null>(null);
 const finishDuration = ref(0);
 const finishShareText = ref('');
+const cookingFinished = ref(false);
 
 const activeApronData = computed(() =>
   unlocks.aprons.find((a) => a.id === store.activeApron) ?? unlocks.aprons[0],
@@ -118,25 +119,30 @@ function onStepComplete(stepIndex: number) {
     }, 800);
   } else {
     setTimeout(() => {
-      if (dish.value) {
-        const durationSec = cookingStartTime.value
-          ? Math.round((Date.now() - cookingStartTime.value) / 1000)
-          : 0;
-        finishDuration.value = durationSec;
-        const shareText = `${dish.value.emoji} 今天做了一道「${dish.value.name}」！用时 ${formatCookingDuration(durationSec)}，快来试试吧～`;
-        finishShareText.value = shareText;
-        store.addCookingRecord(dish.value.id, {
-          durationSeconds: durationSec,
-          shareText,
-        });
-        const challengeResult = challengesStore.recordCooking(dish.value.id);
-        if (challengeResult.newBadges.length > 0) {
-          pendingChallengeBadges.value = challengeResult.newBadges;
-        }
-      }
-      showFinishModal.value = true;
+      finishCooking();
     }, 1000);
   }
+}
+
+function finishCooking() {
+  if (cookingFinished.value || !dish.value) return;
+  cookingFinished.value = true;
+
+  const durationSec = cookingStartTime.value
+    ? Math.round((Date.now() - cookingStartTime.value) / 1000)
+    : 0;
+  finishDuration.value = durationSec;
+  const shareText = `${dish.value.emoji} 今天做了一道「${dish.value.name}」！用时 ${formatCookingDuration(durationSec)}，快来试试吧～`;
+  finishShareText.value = shareText;
+  store.addCookingRecord(dish.value.id, {
+    durationSeconds: durationSec,
+    shareText,
+  });
+  const challengeResult = challengesStore.recordCooking(dish.value.id);
+  if (challengeResult.newBadges.length > 0) {
+    pendingChallengeBadges.value = challengeResult.newBadges;
+  }
+  showFinishModal.value = true;
 }
 
 function goPrev() {
@@ -435,9 +441,9 @@ function handleSaveNote(data: { content: string; rating: 1 | 2 | 3 | 4 | 5 }) {
         <button
           v-else
           class="btn-primary flex items-center gap-2 !bg-matcha-500 hover:!bg-matcha-600"
-          :disabled="!stepCompleted[3] && !showFinishModal"
+          :disabled="cookingFinished || !stepCompleted[3]"
           data-onboarding="finish-btn"
-          @click="showFinishModal = true"
+          @click="finishCooking"
         >
           <Home :size="18" />
           <span>完成烹饪</span>

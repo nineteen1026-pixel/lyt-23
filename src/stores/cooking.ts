@@ -7,6 +7,17 @@ export interface CookingRecord {
   completedAt: string;
 }
 
+export interface Note {
+  id: string;
+  dishId: string;
+  dishName: string;
+  dishEmoji: string;
+  content: string;
+  rating: 1 | 2 | 3 | 4 | 5;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface UnlockResult {
   newDecorations: Decoration[];
   newAprons: Apron[];
@@ -37,6 +48,7 @@ export const useCookingStore = defineStore(
     const lastCheckInDate = ref<string | null>(null);
     const checkInDates = ref<string[]>([]);
     const cookingHistory = ref<CookingRecord[]>([]);
+    const notes = ref<Note[]>([]);
     const unlockedDecorations = ref<string[]>([]);
     const unlockedAprons = ref<string[]>(['default']);
     const activeDecoration = ref<string | null>(null);
@@ -53,6 +65,59 @@ export const useCookingStore = defineStore(
         cookingHistory.value = cookingHistory.value.slice(0, 500);
       }
     }
+
+    function addNote(note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>): Note {
+      const now = new Date().toISOString();
+      const newNote: Note = {
+        ...note,
+        id: `note-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        createdAt: now,
+        updatedAt: now,
+      };
+      notes.value.unshift(newNote);
+      if (notes.value.length > 200) {
+        notes.value = notes.value.slice(0, 200);
+      }
+      return newNote;
+    }
+
+    function updateNote(id: string, updates: Partial<Omit<Note, 'id' | 'createdAt' | 'dishId'>>): Note | undefined {
+      const idx = notes.value.findIndex((n) => n.id === id);
+      if (idx > -1) {
+        notes.value[idx] = {
+          ...notes.value[idx],
+          ...updates,
+          updatedAt: new Date().toISOString(),
+        };
+        return notes.value[idx];
+      }
+      return undefined;
+    }
+
+    function deleteNote(id: string): void {
+      const idx = notes.value.findIndex((n) => n.id === id);
+      if (idx > -1) {
+        notes.value.splice(idx, 1);
+      }
+    }
+
+    function searchNotes(keyword: string): Note[] {
+      if (!keyword.trim()) {
+        return notes.value;
+      }
+      const lowerKeyword = keyword.toLowerCase();
+      return notes.value.filter(
+        (n) =>
+          n.dishName.toLowerCase().includes(lowerKeyword) ||
+          n.content.toLowerCase().includes(lowerKeyword),
+      );
+    }
+
+    function getNotesByDish(dishId: string): Note[] {
+      return notes.value.filter((n) => n.dishId === dishId);
+    }
+
+    const recentNotes = computed(() => notes.value.slice(0, 5));
 
     function checkIn(): UnlockResult {
       const today = todayStr();
@@ -110,12 +175,19 @@ export const useCookingStore = defineStore(
       lastCheckInDate,
       checkInDates,
       cookingHistory,
+      notes,
+      recentNotes,
       unlockedDecorations,
       unlockedAprons,
       activeDecoration,
       activeApron,
       isCheckedInToday,
       addCookingRecord,
+      addNote,
+      updateNote,
+      deleteNote,
+      searchNotes,
+      getNotesByDish,
       checkIn,
       toggleDecoration,
       setActiveApron,

@@ -9,6 +9,7 @@ const emit = defineEmits<{
   (e: 'checkIn'): void;
   (e: 'backHome'): void;
   (e: 'cookMore'): void;
+  (e: 'writeNote'): void;
 }>();
 </script>
 
@@ -100,6 +101,16 @@ const emit = defineEmits<{
               </button>
             </div>
           </div>
+        </div>
+
+        <div class="px-8 pb-6">
+          <button
+            class="w-full py-3 rounded-2xl bg-gradient-to-r from-matcha-50 to-cream-50 border-2 border-matcha-300 text-matcha-700 font-medium text-sm hover:shadow-soft transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+            @click="emit('writeNote')"
+          >
+            <span>📝</span>
+            <span>写改良心得</span>
+          </button>
         </div>
 
         <div class="px-8 pb-8 flex gap-3">

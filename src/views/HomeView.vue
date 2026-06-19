@@ -7,7 +7,7 @@ import { useCookingStore } from '@/stores/cooking';
 import { useProfileStore, ALLERGENS } from '@/stores/profile';
 import { unlocks } from '@/data/unlocks';
 import { computed } from 'vue';
-import { AlertTriangle, Sparkles } from 'lucide-vue-next';
+import { AlertTriangle, Sparkles, BookOpen, ChevronRight, Star } from 'lucide-vue-next';
 
 const router = useRouter();
 const store = useCookingStore();
@@ -203,6 +203,62 @@ function selectDish(id: string) {
         </button>
       </div>
     </Transition>
+
+    <section
+      v-if="store.recentNotes.length > 0"
+      class="mb-8 animate-fade-slide"
+      style="animation-delay: 0.08s"
+    >
+      <div class="flex items-end justify-between mb-4">
+        <div>
+          <h2 class="text-display text-xl text-brown-900 flex items-center gap-2">
+            <BookOpen :size="20" class="text-apricot-500" />
+            最近笔记
+          </h2>
+          <p class="text-xs text-brown-800/60 mt-1">记录你的烹饪心得～</p>
+        </div>
+        <button
+          class="flex items-center gap-1 text-sm text-apricot-600 hover:text-apricot-700 transition-colors"
+          @click="router.push('/notes')"
+        >
+          <span>查看全部</span>
+          <ChevronRight :size="16" />
+        </button>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div
+          v-for="note in store.recentNotes"
+          :key="note.id"
+          class="card-soft p-4 hover:shadow-card transition-all duration-300 cursor-pointer"
+          @click="router.push('/notes')"
+        >
+          <div class="flex items-start gap-3">
+            <div class="text-3xl shrink-0">{{ note.dishEmoji }}</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between mb-1">
+                <h4 class="text-display text-brown-900 text-base truncate">
+                  {{ note.dishName }}
+                </h4>
+                <div class="flex items-center gap-0.5 shrink-0">
+                  <Star
+                    v-for="i in 5"
+                    :key="i"
+                    :size="12"
+                    :class="i <= note.rating ? 'text-amber-400 fill-amber-400' : 'text-brown-800/10'"
+                  />
+                </div>
+              </div>
+              <p class="text-xs text-brown-800/50 mb-2">
+                {{ new Date(note.createdAt).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' }) }}
+              </p>
+              <p class="text-sm text-brown-800/70 line-clamp-2 leading-relaxed">
+                {{ note.content }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
 
     <section class="mb-6 animate-fade-slide" style="animation-delay: 0.1s">
       <div class="flex items-end justify-between mb-5">

@@ -12,6 +12,7 @@ import SeasonStep from '@/components/cooking/SeasonStep.vue';
 import BakeStep from '@/components/cooking/BakeStep.vue';
 import FinishModal from '@/components/FinishModal.vue';
 import UnlockModal from '@/components/UnlockModal.vue';
+import NoteEditor from '@/components/NoteEditor.vue';
 
 interface UnlockItem {
   type: 'decoration' | 'apron';
@@ -33,6 +34,7 @@ const stepCompleted = ref([false, false, false, false]);
 const showFinishModal = ref(false);
 const showUnlockModal = ref(false);
 const pendingUnlockItems = ref<UnlockItem[]>([]);
+const showNoteEditor = ref(false);
 
 const activeApronData = computed(() =>
   unlocks.aprons.find((a) => a.id === store.activeApron) ?? unlocks.aprons[0],
@@ -125,6 +127,23 @@ function handleCookMore() {
   showFinishModal.value = false;
   showUnlockModal.value = false;
   router.push('/');
+}
+
+function handleWriteNote() {
+  showFinishModal.value = false;
+  showNoteEditor.value = true;
+}
+
+function handleSaveNote(data: { content: string; rating: 1 | 2 | 3 | 4 | 5 }) {
+  if (!dish.value) return;
+  store.addNote({
+    dishId: dish.value.id,
+    dishName: dish.value.name,
+    dishEmoji: dish.value.emoji,
+    content: data.content,
+    rating: data.rating,
+  });
+  showNoteEditor.value = false;
 }
 </script>
 
@@ -238,6 +257,7 @@ function handleCookMore() {
         @check-in="handleCheckIn"
         @back-home="handleBackHome"
         @cook-more="handleCookMore"
+        @write-note="handleWriteNote"
       />
     </Transition>
 
@@ -246,6 +266,18 @@ function handleCookMore() {
         v-if="showUnlockModal"
         :new-items="pendingUnlockItems"
         @close="handleBackHome"
+      />
+    </Transition>
+
+    <Transition name="fade">
+      <NoteEditor
+        v-if="showNoteEditor && dish"
+        :visible="showNoteEditor"
+        :dish-id="dish.id"
+        :dish-name="dish.name"
+        :dish-emoji="dish.emoji"
+        @close="showNoteEditor = false"
+        @save="handleSaveNote"
       />
     </Transition>
   </div>

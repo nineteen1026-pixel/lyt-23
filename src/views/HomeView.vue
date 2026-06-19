@@ -7,10 +7,23 @@ import { useCookingStore } from '@/stores/cooking';
 import { useProfileStore, ALLERGENS } from '@/stores/profile';
 import { unlocks } from '@/data/unlocks';
 import { computed, ref, onMounted } from 'vue';
-import { AlertTriangle, Sparkles, BookOpen, ChevronRight, Star, Target, Trophy } from 'lucide-vue-next';
+import { AlertTriangle, Sparkles, BookOpen, ChevronRight, Star, Target, Trophy, Leaf, Calendar } from 'lucide-vue-next';
 import { useChallengesStore } from '@/stores/challenges';
 import ChallengeProgress from '@/components/challenges/ChallengeProgress.vue';
 import ChallengeList from '@/components/challenges/ChallengeList.vue';
+import {
+  getCurrentMonth,
+  getCurrentSeason,
+  getCurrentSeasonalDishes,
+  MONTH_NAMES,
+  SEASON_NAMES,
+  SEASON_EMOJI,
+  SEASON_COLORS,
+  isDishAvailableThisMonth,
+  getSeasonalDishInfo,
+  getCurrentSeasonalDecorations,
+  getCurrentSeasonalAprons,
+} from '@/data/seasonal';
 
 const router = useRouter();
 const store = useCookingStore();
@@ -29,6 +42,51 @@ function handleStartChallenge(challengeId: string) {
 
 const activeDecoration = computed(() =>
   unlocks.decorations.find((d) => d.id === store.activeDecoration),
+);
+
+const currentMonth = computed(() => getCurrentMonth());
+const currentSeason = computed(() => getCurrentSeason());
+const currentMonthName = computed(() => MONTH_NAMES[currentMonth.value]);
+const currentSeasonName = computed(() => SEASON_NAMES[currentSeason.value]);
+const currentSeasonEmoji = computed(() => SEASON_EMOJI[currentSeason.value]);
+const currentSeasonColor = computed(() => SEASON_COLORS[currentSeason.value]);
+
+const currentSeasonalDishIds = computed(() =>
+  getCurrentSeasonalDishes().map((sd) => sd.dishId),
+);
+
+const availableDishes = computed<Dish[]>(() =>
+  dishes.filter((d) => isDishAvailableThisMonth(d.id)),
+);
+
+const seasonalDishesOnly = computed<DishWithMeta[]>(() => {
+  return sortedDishes.value.filter((item) =>
+    currentSeasonalDishIds.value.includes(item.dish.id),
+  );
+});
+
+const regularDishes = computed<DishWithMeta[]>(() => {
+  return sortedDishes.value.filter((item) =>
+    !currentSeasonalDishIds.value.includes(item.dish.id),
+  );
+});
+
+const currentSeasonalDecos = computed(() => {
+  const decoIds = getCurrentSeasonalDecorations().map((d) => d.decorationId);
+  return unlocks.decorations.filter((d) => decoIds.includes(d.id));
+});
+
+const currentSeasonalApronList = computed(() => {
+  const apronIds = getCurrentSeasonalAprons().map((a) => a.apronId);
+  return unlocks.aprons.filter((a) => apronIds.includes(a.id));
+});
+
+const unlockedSeasonalDecosCount = computed(() =>
+  currentSeasonalDecos.value.filter((d) => store.unlockedDecorations.includes(d.id)).length,
+);
+
+const unlockedSeasonalApronsCount = computed(() =>
+  currentSeasonalApronList.value.filter((a) => store.unlockedAprons.includes(a.id)).length,
 );
 
 function spicyLevelToNum(level: string): number {
@@ -101,7 +159,7 @@ interface DishWithMeta {
 }
 
 const dishesWithMeta = computed<DishWithMeta[]>(() => {
-  return dishes.map((dish) => {
+  return availableDishes.value.map((dish) => {
     const matching = dish.allergens.filter((a) => profileStore.allergens.includes(a));
     return {
       dish,
@@ -115,6 +173,9 @@ const dishesWithMeta = computed<DishWithMeta[]>(() => {
 const sortedDishes = computed<DishWithMeta[]>(() => {
   const list = [...dishesWithMeta.value];
   list.sort((a, b) => {
+    const aSeasonal = currentSeasonalDishIds.value.includes(a.dish.id) ? 0 : 1;
+    const bSeasonal = currentSeasonalDishIds.value.includes(b.dish.id) ? 0 : 1;
+    if (aSeasonal !== bSeasonal) return aSeasonal - bSeasonal;
     if (a.hasAllergen !== b.hasAllergen) {
       return a.hasAllergen ? 1 : -1;
     }
@@ -132,6 +193,11 @@ const allergenWarningNames = computed(() => {
   dishesWithMeta.value.forEach((d) => d.matchingAllergens.forEach((a) => ids.add(a)));
   return ALLERGENS.filter((a) => ids.has(a.id));
 });
+
+function getSeasonalLabel(dishId: string): string | undefined {
+  const info = getSeasonalDishInfo(dishId);
+  return info?.limitedLabel;
+}
 
 function selectDish(id: string) {
   router.push(`/cooking/${id}`);
@@ -351,7 +417,105 @@ function selectDish(id: string) {
       </div>
     </section>
 
-    <section class="mb-6 animate-fade-slide" style="animation-delay: 0.1s">
+    <section
+      v-if="seasonalDishesOnly.length > 0"
+      class="mb-8 animate-fade-slide"
+      style="animation-delay: 0.1s"
+    >
+      <div class="flex items-end justify-between mb-5">
+        <div>
+          <h2 class="text-display text-2xl text-brown-900 flex items-center gap-2">
+            <span
+              class="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
+              :style="{ background: `${currentSeasonColor}33` }"
+            >
+              {{ currentSeasonEmoji }}
+            </span>
+            {{ currentMonthName }}时令菜单
+          </h2>
+          <p class="text-sm text-brown-800/60 mt-1 flex items-center gap-1.5">
+            <Calendar :size="12" />
+            {{ currentSeasonName }}季限定 · 限时上架中
+            <span v-if="currentSeasonalDecos.length > 0 || currentSeasonalApronList.length > 0" class="ml-1">
+              · 本季可解锁 <span class="text-apricot-600 font-medium">{{ currentSeasonalDecos.length + currentSeasonalApronList.length }}</span> 件限定装饰
+            </span>
+          </p>
+        </div>
+        <div class="text-right">
+          <div class="text-xs text-brown-800/50 flex items-center gap-1">
+            <Leaf :size="12" />
+            {{ seasonalDishesOnly.length }} 道限定菜
+          </div>
+          <div v-if="currentSeasonalDecos.length > 0" class="text-[11px] text-brown-800/40 mt-0.5">
+            装饰 {{ unlockedSeasonalDecosCount }}/{{ currentSeasonalDecos.length }} · 围裙 {{ unlockedSeasonalApronsCount }}/{{ currentSeasonalApronList.length }}
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="relative p-5 rounded-2xl mb-5 overflow-hidden"
+        :style="{ background: `linear-gradient(135deg, ${currentSeasonColor}22, ${currentSeasonColor}08)` }"
+      >
+        <div class="absolute -top-4 -right-4 text-8xl opacity-10 select-none pointer-events-none">
+          {{ currentSeasonEmoji }}
+        </div>
+        <div class="relative flex items-start justify-between gap-4 flex-wrap">
+          <div class="flex-1 min-w-[200px]">
+            <h3 class="text-display text-lg text-brown-900 mb-1.5 flex items-center gap-1.5">
+              <Sparkles :size="16" class="text-amber-500" />
+              本月限定美味
+            </h3>
+            <p class="text-sm text-brown-800/70 leading-relaxed">
+              珍惜当季食材，品尝时节的馈赠～完成打卡即可解锁限定装饰和围裙！
+            </p>
+          </div>
+          <div class="flex gap-2 flex-wrap">
+            <span
+              v-for="deco in currentSeasonalDecos"
+              :key="deco.id"
+              class="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border transition-all"
+              :class="store.unlockedDecorations.includes(deco.id)
+                ? 'bg-matcha-50 border-matcha-200 text-matcha-700'
+                : 'bg-cream-100 border-cream-200 text-brown-800/50'"
+              :title="`${deco.name} - 打卡${deco.threshold}天解锁`"
+            >
+              <span>{{ deco.emoji }}</span>
+              <span>{{ store.unlockedDecorations.includes(deco.id) ? '已解锁' : `${deco.threshold}天` }}</span>
+            </span>
+            <span
+              v-for="apron in currentSeasonalApronList"
+              :key="apron.id"
+              class="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border transition-all"
+              :class="store.unlockedAprons.includes(apron.id)
+                ? 'bg-matcha-50 border-matcha-200 text-matcha-700'
+                : 'bg-cream-100 border-cream-200 text-brown-800/50'"
+              :title="`${apron.name} - 打卡${apron.threshold}天解锁`"
+            >
+              <span>👩‍🍳</span>
+              <span>{{ store.unlockedAprons.includes(apron.id) ? '已解锁' : `${apron.threshold}天` }}</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
+        <DishCard
+          v-for="(item, idx) in seasonalDishesOnly"
+          :key="item.dish.id"
+          :dish="item.dish"
+          :index="idx"
+          :has-allergen="item.hasAllergen"
+          :matching-allergens="item.matchingAllergens"
+          :taste-score="item.tasteScore"
+          @select="selectDish(item.dish.id)"
+        />
+      </div>
+    </section>
+
+    <section
+      class="mb-6 animate-fade-slide"
+      style="animation-delay: 0.12s"
+    >
       <div class="flex items-end justify-between mb-5">
         <div>
           <h2 class="text-display text-2xl text-brown-900">今日菜单</h2>
@@ -362,13 +526,13 @@ function selectDish(id: string) {
             <template v-else>挑一个喜欢的吧～</template>
           </p>
         </div>
-        <div class="text-xs text-brown-800/50">共 {{ dishes.length }} 道快手菜</div>
+        <div class="text-xs text-brown-800/50">共 {{ availableDishes.length }} 道快手菜</div>
       </div>
     </section>
 
     <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6 mb-10">
       <DishCard
-        v-for="(item, idx) in sortedDishes"
+        v-for="(item, idx) in regularDishes"
         :key="item.dish.id"
         :dish="item.dish"
         :index="idx"

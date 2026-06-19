@@ -161,16 +161,16 @@ function selectDish(id: string) {
     <Transition name="fade">
       <div
         v-if="profileStore.hasAllergen && dishesWithMeta.some((d) => d.hasAllergen)"
-        class="mb-6 animate-fade-slide card-soft p-4 bg-gradient-to-r from-red-50 to-apricot-50 border-red-200"
+        class="mb-6 animate-fade-slide card-soft p-4 bg-gradient-to-r from-apricot-50 to-cream-50 border-apricot-200"
         style="animation-delay: 0.05s"
       >
         <div class="flex items-start gap-3">
-          <div class="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-500 shrink-0">
+          <div class="w-8 h-8 rounded-full bg-apricot-100 flex items-center justify-center text-apricot-500 shrink-0">
             <AlertTriangle :size="18" />
           </div>
           <div class="flex-1">
             <div class="text-sm font-medium text-brown-900 mb-0.5">
-              已为你过滤含过敏源的菜品
+              已为你调整菜品排序
             </div>
             <div class="text-xs text-brown-800/70 leading-relaxed">
               已标记过敏源：
@@ -181,7 +181,7 @@ function selectDish(id: string) {
               >
                 {{ a.emoji }}{{ a.name }}<span v-if="i < profileStore.allergenDetails.length - 1">、</span>
               </span>
-              。含这些食材的菜品已排到最后。
+              。含这些食材的菜品已排在最后，你可以根据需要选择。
             </div>
           </div>
         </div>
@@ -210,7 +210,7 @@ function selectDish(id: string) {
           <h2 class="text-display text-2xl text-brown-900">今日菜单</h2>
           <p class="text-sm text-brown-800/60 mt-1">
             <template v-if="profileStore.hasAllergen">
-              已为你智能排序，适合你的 {{ safeDishesCount }} 道菜优先展示
+              已为你智能排序，过敏源菜品排在最后
             </template>
             <template v-else>挑一个喜欢的吧～</template>
           </p>

@@ -142,23 +142,31 @@ const emit = defineEmits<{
 }>();
 
 const TOTAL = computed(() => props.seasonings.length);
+const initialSkipped = ref(0);
 const sprinkledCount = ref(0);
-const allSprinkled = computed(() => sprinkledCount.value >= TOTAL.value);
+const allSprinkled = computed(() => sprinkledCount.value + initialSkipped.value >= TOTAL.value);
 const isMixing = ref(false);
 const showComplete = ref(false);
 
-const seasoningStates = ref<Map<string, 'idle' | 'sprinkling' | 'done'>>(new Map());
+const seasoningStates = ref<Map<string, 'idle' | 'sprinkling' | 'done' | 'skipped'>>(new Map());
 const seasoningOpacities = ref<Map<string, number>>(new Map());
 
 props.seasonings.forEach((s) => {
-  seasoningStates.value.set(s, 'idle');
-  seasoningOpacities.value.set(s, 0);
+  const multiplier = profileStore.getSeasoningMultiplier(s);
+  if (multiplier === 0) {
+    seasoningStates.value.set(s, 'skipped');
+    seasoningOpacities.value.set(s, 0);
+    initialSkipped.value++;
+  } else {
+    seasoningStates.value.set(s, 'idle');
+    seasoningOpacities.value.set(s, 0);
+  }
 });
 
 const particleContainerRef = ref<HTMLDivElement | null>(null);
 const particles: HTMLDivElement[] = [];
 
-const progressText = computed(() => `${sprinkledCount.value}/${TOTAL.value}`);
+const progressText = computed(() => `${sprinkledCount.value + initialSkipped.value}/${TOTAL.value}`);
 
 const isButtonDisabled = computed(() => !allSprinkled.value || isMixing.value);
 
@@ -179,17 +187,18 @@ function getBottleTransform(index: number, state: string): string {
 function sprinklingSeasoning(index: number) {
   const seasoning = props.seasonings[index];
   const state = seasoningStates.value.get(seasoning);
+  const multiplier = profileStore.getSeasoningMultiplier(seasoning);
 
-  if (state === 'sprinkling' || state === 'done') return;
+  if (state === 'sprinkling' || state === 'done' || state === 'skipped') return;
 
   seasoningStates.value.set(seasoning, 'sprinkling');
 
   const config = getSeasoningConfig(seasoning);
-  createParticles(index, config);
+  createParticles(index, config, multiplier);
 
   const fadeDuration = 1500;
   const opacityStart = seasoningOpacities.value.get(seasoning) || 0;
-  const targetOpacity = 1;
+  const targetOpacity = Math.min(1, multiplier);
   const startTime = Date.now();
 
   const fadeInterval = setInterval(() => {
@@ -211,7 +220,7 @@ function sprinklingSeasoning(index: number) {
   }, 1200);
 }
 
-function createParticles(bottleIndex: number, config: SeasoningConfig) {
+function createParticles(bottleIndex: number, config: SeasoningConfig, multiplier: number = 1) {
   if (!particleContainerRef.value) return;
 
   const containerRect = particleContainerRef.value.getBoundingClientRect();
@@ -223,7 +232,8 @@ function createParticles(bottleIndex: number, config: SeasoningConfig) {
   const bottleX = firstBottleX + bottleIndex * bottleSpacing;
   const bottleBottomY = 100;
 
-  const particleCount = 25 + Math.floor(Math.random() * 10);
+  const baseParticleCount = 25 + Math.floor(Math.random() * 10);
+  const particleCount = Math.max(0, Math.round(baseParticleCount * multiplier));
 
   for (let i = 0; i < particleCount; i++) {
     setTimeout(() => {
@@ -421,9 +431,11 @@ onUnmounted(cleanUp);
           <div
             v-for="(seasoning, index) in seasonings"
             :key="'bottle-' + seasoning"
-            class="flex flex-col items-center cursor-pointer select-none"
+            class="flex flex-col items-center select-none"
             :class="{
+              'cursor-pointer': seasoningStates.get(seasoning) === 'idle',
               'pointer-events-none': seasoningStates.get(seasoning) !== 'idle',
+              'opacity-50 grayscale': seasoningStates.get(seasoning) === 'skipped',
             }"
             @click="sprinklingSeasoning(index)"
           >
@@ -448,11 +460,14 @@ onUnmounted(cleanUp);
                   borderRadius: '14px 14px 10px 10px',
                   border: '3px solid rgba(255, 255, 255, 0.6)',
                   boxShadow:
-                    '0 6px 16px rgba(0, 0, 0, 0.15), inset 0 2px 6px rgba(255, 255, 255, 0.4), inset 0 -4px 8px rgba(0, 0, 0, 0.1)',
+                    seasoningStates.get(seasoning) === 'skipped'
+                      ? '0 2px 6px rgba(0, 0, 0, 0.1)'
+                      : '0 6px 16px rgba(0, 0, 0, 0.15), inset 0 2px 6px rgba(255, 255, 255, 0.4), inset 0 -4px 8px rgba(0, 0, 0, 0.1)',
                 }"
               >
                 <div
                   class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-2/3"
+                  :class="{ 'opacity-50': seasoningStates.get(seasoning) === 'skipped' }"
                   style="
                     width: 26px;
                     height: 22px;
@@ -467,6 +482,7 @@ onUnmounted(cleanUp);
 
                 <div
                   class="absolute bottom-2.5 left-2 right-2 py-1 rounded-md bg-white/80 backdrop-blur-sm text-center"
+                  :class="{ 'opacity-70': seasoningStates.get(seasoning) === 'skipped' }"
                   style="
                     border: 1.5px solid rgba(255, 255, 255, 0.9);
                     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -482,6 +498,14 @@ onUnmounted(cleanUp);
                   v-if="seasoningStates.get(seasoning) === 'idle'"
                 >
                   <div class="w-3 h-3 bg-matcha-400 rounded-full animate-breath-ring-sm" />
+                </div>
+                <div
+                  class="absolute -top-1 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                  v-if="seasoningStates.get(seasoning) === 'skipped'"
+                >
+                  <div class="text-[10px] bg-gray-400 text-white px-1.5 py-0.5 rounded-full font-bold">
+                    跳过
+                  </div>
                 </div>
               </div>
 
@@ -520,6 +544,8 @@ onUnmounted(cleanUp);
                     seasoningStates.get(seasoning) === 'sprinkling',
                   'bg-matcha-500 border-matcha-600 text-white shadow-md shadow-matcha-500/30':
                     seasoningStates.get(seasoning) === 'done',
+                  'bg-gray-300 border-gray-400 text-white/90':
+                    seasoningStates.get(seasoning) === 'skipped',
                 }"
               >
                 <template v-if="seasoningStates.get(seasoning) === 'done'">
@@ -528,7 +554,10 @@ onUnmounted(cleanUp);
                 <template v-else-if="seasoningStates.get(seasoning) === 'sprinkling'">
                   ·
                 </template>
-                <template v-else>
+                <template v-else-if="seasoningStates.get(seasoning) === 'skipped'">
+                  ⊘
+                </template>
+                <template>
                   {{ index + 1 }}
                 </template>
               </div>
@@ -546,7 +575,7 @@ onUnmounted(cleanUp);
       <div class="w-full h-3 bg-cream-200 rounded-full overflow-hidden border border-white/60">
         <div
           class="h-full bg-gradient-to-r from-apricot-400 via-apricot-500 to-apricot-600 rounded-full transition-all duration-400 ease-out"
-          :style="{ width: `${TOTAL > 0 ? (sprinkledCount / TOTAL) * 100 : 0}%` }"
+          :style="{ width: `${TOTAL > 0 ? ((sprinkledCount + initialSkipped) / TOTAL) * 100 : 0}%` }"
         />
       </div>
       <div class="flex justify-between mt-2 gap-1.5">
@@ -558,6 +587,7 @@ onUnmounted(cleanUp);
             'bg-matcha-500': seasoningStates.get(s) === 'done',
             'bg-apricot-400 animate-breath-ring-sm': seasoningStates.get(s) === 'sprinkling',
             'bg-cream-300/60': seasoningStates.get(s) === 'idle',
+            'bg-gray-300/80': seasoningStates.get(s) === 'skipped',
           }"
         />
       </div>
@@ -575,6 +605,8 @@ onUnmounted(cleanUp);
             seasoningStates.get(s) === 'sprinkling',
           'bg-matcha-50 border-matcha-300 text-matcha-700':
             seasoningStates.get(s) === 'done',
+          'bg-gray-50 border-gray-200 text-gray-500 opacity-70':
+            seasoningStates.get(s) === 'skipped',
         }"
       >
         <div class="flex items-center justify-center gap-1.5 w-full">
@@ -584,6 +616,10 @@ onUnmounted(cleanUp);
             v-if="seasoningStates.get(s) === 'done'"
             class="text-matcha-600 font-bold"
           >✓</span>
+          <span
+            v-if="seasoningStates.get(s) === 'skipped'"
+            class="text-gray-400 text-xs"
+          >跳过</span>
         </div>
         <div
           class="text-[10px] leading-none transition-colors duration-300"
@@ -591,9 +627,13 @@ onUnmounted(cleanUp);
             'text-brown-800/50': seasoningStates.get(s) === 'idle',
             'text-apricot-600/80': seasoningStates.get(s) === 'sprinkling',
             'text-matcha-600/80': seasoningStates.get(s) === 'done',
+            'text-gray-400/80': seasoningStates.get(s) === 'skipped',
           }"
         >
-          <template v-if="profileStore.getRecommendedDosage(s) !== '正常'">
+          <template v-if="seasoningStates.get(s) === 'skipped'">
+            已跳过（{{ profileStore.getRecommendedDosage(s) }}）
+          </template>
+          <template v-else-if="profileStore.getRecommendedDosage(s) !== '正常'">
             建议：{{ profileStore.getRecommendedDosage(s) }}
           </template>
           <template v-else>

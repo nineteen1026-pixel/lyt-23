@@ -1,3 +1,5 @@
+import { isDecorationAvailableThisMonth, isApronAvailableThisMonth } from '@/data/seasonal';
+
 export interface Decoration {
   id: string;
   name: string;
@@ -59,10 +61,16 @@ export function checkNewUnlocks(prevDays: number, newDays: number): {
   newAprons: Apron[];
 } {
   const newDecorations = unlocks.decorations.filter(
-    (d) => d.threshold > prevDays && d.threshold <= newDays,
+    (d) =>
+      d.threshold > prevDays &&
+      d.threshold <= newDays &&
+      isDecorationAvailableThisMonth(d.id),
   );
   const newAprons = unlocks.aprons.filter(
-    (a) => a.threshold > prevDays && a.threshold <= newDays,
+    (a) =>
+      a.threshold > prevDays &&
+      a.threshold <= newDays &&
+      isApronAvailableThisMonth(a.id),
   );
   return { newDecorations, newAprons };
 }

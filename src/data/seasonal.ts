@@ -239,3 +239,25 @@ export function getAllSeasonalThresholds(): number[] {
   seasonalAprons.forEach((sa) => set.add(sa.unlockThreshold));
   return Array.from(set).sort((a, b) => a - b);
 }
+
+export function isDecorationAvailableThisMonth(decorationId: string): boolean {
+  const currentMonth = getCurrentMonth();
+  const seasonal = seasonalDecorations.find((sd) => sd.decorationId === decorationId);
+  if (!seasonal) return true;
+  return seasonal.months.includes(currentMonth);
+}
+
+export function isApronAvailableThisMonth(apronId: string): boolean {
+  const currentMonth = getCurrentMonth();
+  const seasonal = seasonalAprons.find((sa) => sa.apronId === apronId);
+  if (!seasonal) return true;
+  return seasonal.months.includes(currentMonth);
+}
+
+export function getSeasonalDecorationInfo(decorationId: string): SeasonalDecoration | undefined {
+  return seasonalDecorations.find((sd) => sd.decorationId === decorationId);
+}
+
+export function getSeasonalApronInfo(apronId: string): SeasonalApron | undefined {
+  return seasonalAprons.find((sa) => sa.apronId === apronId);
+}

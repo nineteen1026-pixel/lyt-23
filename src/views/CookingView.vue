@@ -1,12 +1,18 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { ArrowLeft, ChevronLeft, ChevronRight, Home } from 'lucide-vue-next';
+import { ArrowLeft, ChevronLeft, ChevronRight, Home, Leaf, AlertCircle } from 'lucide-vue-next';
 import { getDishById } from '@/data/dishes';
 import { useCookingStore, type UnlockResult } from '@/stores/cooking';
 import { useChallengesStore } from '@/stores/challenges';
 import { unlocks, type Decoration, type Apron } from '@/data/unlocks';
 import type { ChallengeBadge } from '@/data/challenges';
+import {
+  isDishAvailableThisMonth,
+  getSeasonalDishInfo,
+  MONTH_NAMES,
+  getCurrentMonth,
+} from '@/data/seasonal';
 import StepProgress from '@/components/cooking/StepProgress.vue';
 import WashStep from '@/components/cooking/WashStep.vue';
 import CutStep from '@/components/cooking/CutStep.vue';
@@ -32,6 +38,22 @@ const challengesStore = useChallengesStore();
 
 const dishId = computed(() => route.params.dishId as string);
 const dish = computed(() => getDishById(dishId.value));
+const isSeasonalDish = computed(() => dish.value?.isSeasonal ?? false);
+const isDishAvailable = computed(() => {
+  if (!dish.value) return false;
+  if (!dish.value.isSeasonal) return true;
+  return isDishAvailableThisMonth(dish.value.id);
+});
+const seasonalInfo = computed(() => dish.value ? getSeasonalDishInfo(dish.value.id) : null);
+const currentMonthName = computed(() => MONTH_NAMES[getCurrentMonth()]);
+const dishAvailableMonths = computed(() => {
+  if (!seasonalInfo.value) return [];
+  return seasonalInfo.value.months.map((m) => MONTH_NAMES[m]);
+});
+const isLockedByThreshold = computed(() => {
+  if (!seasonalInfo.value?.unlockThreshold) return false;
+  return store.totalDays < seasonalInfo.value.unlockThreshold;
+});
 
 const currentStep = ref(0);
 const stepCompleted = ref([false, false, false, false]);
@@ -190,144 +212,247 @@ function handleSaveNote(data: { content: string; rating: 1 | 2 | 3 | 4 | 5 }) {
 
 <template>
   <div v-if="dish" class="container max-w-3xl mx-auto px-4 pt-6">
-    <header class="flex items-center justify-between mb-6 animate-fade-slide">
-      <button
-        class="flex items-center gap-2 card-soft px-4 py-2.5 hover:shadow-soft transition-all active:scale-95"
-        @click="goPrev"
-      >
-        <ArrowLeft :size="18" class="text-brown-800/70" />
-        <span class="text-sm text-brown-800/80 font-medium">
-          {{ currentStep === 0 ? '回首页' : '上一步' }}
-        </span>
-      </button>
-
-      <div class="flex items-center gap-3">
-        <div class="flex items-center gap-2 card-soft px-4 py-2">
-          <span class="text-2xl animate-float">{{ dish.emoji }}</span>
-          <div>
-            <div class="text-display text-brown-900 leading-tight">{{ dish.name }}</div>
-            <div class="text-[11px] text-brown-800/60">预计 {{ dish.time }} 分钟</div>
+    <template v-if="!isDishAvailable">
+      <div class="flex flex-col items-center justify-center py-16 animate-fade-slide text-center">
+        <div class="relative mb-6">
+          <div
+            class="w-32 h-32 rounded-3xl flex items-center justify-center text-6xl grayscale opacity-60"
+            :style="{ background: `linear-gradient(135deg, ${dish.color}22, ${dish.color}08)` }"
+          >
+            {{ dish.emoji }}
+          </div>
+          <div class="absolute -top-2 -right-2 w-12 h-12 rounded-full bg-brown-900/80 flex items-center justify-center">
+            <Leaf :size="22" class="text-white" />
           </div>
         </div>
-        <div
-          class="w-10 h-10 rounded-full border-2 border-cream-300 flex items-end justify-center overflow-hidden shrink-0"
-          title="当前围裙"
-        >
-          <div
-            class="w-[80%] h-[65%] rounded-t-lg"
-            :style="{ background: getApronBackground(activeApronData.color, activeApronData.stripe) }"
-          />
+        <h2 class="text-display text-3xl text-brown-900 mb-2">这道时令菜过季啦</h2>
+        <p class="text-sm text-brown-800/70 max-w-sm mb-6 leading-relaxed">
+          「{{ dish.name }}」是
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 font-medium">
+            {{ seasonalInfo?.limitedLabel ?? '季节限定' }}
+          </span>
+          菜品，现在是 {{ currentMonthName }}，暂时无法烹饪～
+        </p>
+        <div class="card-soft p-4 mb-8 w-full max-w-sm">
+          <div class="flex items-center gap-2 mb-2 text-xs text-brown-800/60">
+            <AlertCircle :size="14" />
+            <span>这道菜的上架时间</span>
+          </div>
+          <div class="flex flex-wrap gap-1.5">
+            <span
+              v-for="month in dishAvailableMonths"
+              :key="month"
+              class="text-xs px-2.5 py-1 rounded-full bg-cream-100 border border-cream-200 text-brown-800/70"
+            >
+              {{ month }}
+            </span>
+          </div>
         </div>
+        <button
+          class="btn-primary flex items-center gap-2"
+          @click="router.push('/')"
+        >
+          <Home :size="18" />
+          <span>回首页看看当季菜品</span>
+        </button>
       </div>
-    </header>
+    </template>
 
-    <div class="mb-8 animate-fade-slide" style="animation-delay: 0.05s">
-      <StepProgress :current-step="currentStep" />
-    </div>
+    <template v-else-if="isLockedByThreshold">
+      <div class="flex flex-col items-center justify-center py-16 animate-fade-slide text-center">
+        <div class="relative mb-6">
+          <div
+            class="w-32 h-32 rounded-3xl flex items-center justify-center text-6xl grayscale opacity-60"
+            :style="{ background: `linear-gradient(135deg, ${dish.color}22, ${dish.color}08)` }"
+          >
+            {{ dish.emoji }}
+          </div>
+          <div class="absolute -top-2 -right-2 w-12 h-12 rounded-full bg-amber-500 flex items-center justify-center shadow-lg">
+            <Home :size="22" class="text-white" />
+          </div>
+        </div>
+        <h2 class="text-display text-3xl text-brown-900 mb-2">再打卡几天就能解锁啦</h2>
+        <p class="text-sm text-brown-800/70 max-w-sm mb-6 leading-relaxed">
+          「{{ dish.name }}」是限定菜品，需要累计打卡
+          <span class="font-medium text-apricot-600">{{ seasonalInfo?.unlockThreshold }}</span>
+          天才能烹饪，继续加油～
+        </p>
+        <div class="card-soft p-4 mb-8 w-full max-w-sm">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs text-brown-800/60">累计打卡进度</span>
+            <span class="text-xs font-medium text-brown-900">
+              {{ store.totalDays }} / {{ seasonalInfo?.unlockThreshold }} 天
+            </span>
+          </div>
+          <div class="h-2 w-full rounded-full bg-cream-200 overflow-hidden">
+            <div
+              class="h-full rounded-full bg-gradient-to-r from-apricot-400 via-apricot-500 to-apricot-600 transition-all duration-500"
+              :style="{ width: `${Math.min((store.totalDays / (seasonalInfo?.unlockThreshold ?? 1)) * 100, 100)}%` }"
+            />
+          </div>
+          <div class="text-[11px] text-brown-800/50 mt-2">
+            还需 {{ (seasonalInfo?.unlockThreshold ?? 0) - store.totalDays }} 天解锁
+          </div>
+        </div>
+        <button
+          class="btn-primary flex items-center gap-2"
+          @click="router.push('/')"
+        >
+          <ArrowLeft :size="18" />
+          <span>回首页选其他菜品</span>
+        </button>
+      </div>
+    </template>
 
-    <div class="animate-fade-slide" style="animation-delay: 0.1s">
-      <Transition name="step" mode="out-in">
-        <WashStep
-          v-if="currentStep === 0"
-          :key="'wash'"
+    <template v-else>
+      <header class="flex items-center justify-between mb-6 animate-fade-slide">
+        <button
+          class="flex items-center gap-2 card-soft px-4 py-2.5 hover:shadow-soft transition-all active:scale-95"
+          @click="goPrev"
+        >
+          <ArrowLeft :size="18" class="text-brown-800/70" />
+          <span class="text-sm text-brown-800/80 font-medium">
+            {{ currentStep === 0 ? '回首页' : '上一步' }}
+          </span>
+        </button>
+
+        <div class="flex items-center gap-3">
+          <div class="flex items-center gap-2 card-soft px-4 py-2">
+            <span class="text-2xl animate-float">{{ dish.emoji }}</span>
+            <div>
+              <div class="flex items-center gap-1.5">
+                <div class="text-display text-brown-900 leading-tight">{{ dish.name }}</div>
+                <span
+                  v-if="isSeasonalDish && seasonalInfo?.limitedLabel"
+                  class="chip !py-0.5 !px-2 bg-gradient-to-r from-amber-400 to-orange-400 text-white border border-amber-300"
+                >
+                  <Leaf :size="10" />
+                  <span class="text-[10px]">{{ seasonalInfo.limitedLabel }}</span>
+                </span>
+              </div>
+              <div class="text-[11px] text-brown-800/60">预计 {{ dish.time }} 分钟</div>
+            </div>
+          </div>
+          <div
+            class="w-10 h-10 rounded-full border-2 border-cream-300 flex items-end justify-center overflow-hidden shrink-0"
+            title="当前围裙"
+          >
+            <div
+              class="w-[80%] h-[65%] rounded-t-lg"
+              :style="{ background: getApronBackground(activeApronData.color, activeApronData.stripe) }"
+            />
+          </div>
+        </div>
+      </header>
+
+      <div class="mb-8 animate-fade-slide" style="animation-delay: 0.05s">
+        <StepProgress :current-step="currentStep" />
+      </div>
+
+      <div class="animate-fade-slide" style="animation-delay: 0.1s">
+        <Transition name="step" mode="out-in">
+          <WashStep
+            v-if="currentStep === 0"
+            :key="'wash'"
+            :dish-emoji="dish.emoji"
+            :dish-name="dish.name"
+            @complete="onStepComplete(0)"
+          />
+          <CutStep
+            v-else-if="currentStep === 1"
+            :key="'cut'"
+            :dish-emoji="dish.emoji"
+            @complete="onStepComplete(1)"
+          />
+          <SeasonStep
+            v-else-if="currentStep === 2"
+            :key="'season'"
+            :seasonings="dish.seasonings"
+            :dish-emoji="dish.emoji"
+            @complete="onStepComplete(2)"
+          />
+          <BakeStep
+            v-else
+            :key="'bake'"
+            :dish-emoji="dish.emoji"
+            :dish-color="dish.color"
+            :time="dish.time"
+            @complete="onStepComplete(3)"
+          />
+        </Transition>
+      </div>
+
+      <div class="flex justify-between mt-6">
+        <button
+          v-if="currentStep > 0"
+          class="btn-secondary flex items-center gap-2"
+          :disabled="!stepCompleted[currentStep - 1]"
+          @click="goPrev"
+        >
+          <ChevronLeft :size="18" />
+          <span>上一步</span>
+        </button>
+        <div v-else />
+        <button
+          v-if="currentStep < 3"
+          class="btn-primary flex items-center gap-2"
+          :disabled="!stepCompleted[currentStep]"
+          @click="goNext"
+        >
+          <span>下一步</span>
+          <ChevronRight :size="18" />
+        </button>
+        <button
+          v-else
+          class="btn-primary flex items-center gap-2 !bg-matcha-500 hover:!bg-matcha-600"
+          :disabled="!stepCompleted[3] && !showFinishModal"
+          @click="showFinishModal = true"
+        >
+          <Home :size="18" />
+          <span>完成烹饪</span>
+        </button>
+      </div>
+
+      <Transition name="fade">
+        <FinishModal
+          v-if="showFinishModal"
           :dish-emoji="dish.emoji"
           :dish-name="dish.name"
-          @complete="onStepComplete(0)"
-        />
-        <CutStep
-          v-else-if="currentStep === 1"
-          :key="'cut'"
-          :dish-emoji="dish.emoji"
-          @complete="onStepComplete(1)"
-        />
-        <SeasonStep
-          v-else-if="currentStep === 2"
-          :key="'season'"
-          :seasonings="dish.seasonings"
-          :dish-emoji="dish.emoji"
-          @complete="onStepComplete(2)"
-        />
-        <BakeStep
-          v-else
-          :key="'bake'"
-          :dish-emoji="dish.emoji"
-          :dish-color="dish.color"
-          :time="dish.time"
-          @complete="onStepComplete(3)"
+          :is-checked-in-today="store.isCheckedInToday"
+          @check-in="handleCheckIn"
+          @back-home="handleBackHome"
+          @cook-more="handleCookMore"
+          @write-note="handleWriteNote"
         />
       </Transition>
-    </div>
 
-    <div class="flex justify-between mt-6">
-      <button
-        v-if="currentStep > 0"
-        class="btn-secondary flex items-center gap-2"
-        :disabled="!stepCompleted[currentStep - 1]"
-        @click="goPrev"
-      >
-        <ChevronLeft :size="18" />
-        <span>上一步</span>
-      </button>
-      <div v-else />
-      <button
-        v-if="currentStep < 3"
-        class="btn-primary flex items-center gap-2"
-        :disabled="!stepCompleted[currentStep]"
-        @click="goNext"
-      >
-        <span>下一步</span>
-        <ChevronRight :size="18" />
-      </button>
-      <button
-        v-else
-        class="btn-primary flex items-center gap-2 !bg-matcha-500 hover:!bg-matcha-600"
-        :disabled="!stepCompleted[3] && !showFinishModal"
-        @click="showFinishModal = true"
-      >
-        <Home :size="18" />
-        <span>完成烹饪</span>
-      </button>
-    </div>
+      <Transition name="fade">
+        <UnlockModal
+          v-if="showUnlockModal"
+          :new-items="pendingUnlockItems"
+          @close="handleBackHome"
+        />
+      </Transition>
 
-    <Transition name="fade">
-      <FinishModal
-        v-if="showFinishModal"
-        :dish-emoji="dish.emoji"
-        :dish-name="dish.name"
-        :is-checked-in-today="store.isCheckedInToday"
-        @check-in="handleCheckIn"
-        @back-home="handleBackHome"
-        @cook-more="handleCookMore"
-        @write-note="handleWriteNote"
-      />
-    </Transition>
+      <Transition name="fade">
+        <NoteEditor
+          v-if="showNoteEditor && dish"
+          :visible="showNoteEditor"
+          :dish-id="dish.id"
+          :dish-name="dish.name"
+          :dish-emoji="dish.emoji"
+          @close="showNoteEditor = false"
+          @save="handleSaveNote"
+        />
+      </Transition>
 
-    <Transition name="fade">
-      <UnlockModal
-        v-if="showUnlockModal"
-        :new-items="pendingUnlockItems"
-        @close="handleBackHome"
-      />
-    </Transition>
-
-    <Transition name="fade">
-      <NoteEditor
-        v-if="showNoteEditor && dish"
-        :visible="showNoteEditor"
-        :dish-id="dish.id"
-        :dish-name="dish.name"
-        :dish-emoji="dish.emoji"
-        @close="showNoteEditor = false"
-        @save="handleSaveNote"
-      />
-    </Transition>
-
-    <Transition name="fade">
-      <ChallengeRewardModal
-        v-if="showChallengeReward && pendingChallengeBadges.length > 0"
-        :badges="pendingChallengeBadges"
-        @close="handleCloseChallengeReward"
-      />
-    </Transition>
+      <Transition name="fade">
+        <ChallengeRewardModal
+          v-if="showChallengeReward && pendingChallengeBadges.length > 0"
+          :badges="pendingChallengeBadges"
+          @close="handleCloseChallengeReward"
+        />
+      </Transition>
+    </template>
   </div>
 </template>

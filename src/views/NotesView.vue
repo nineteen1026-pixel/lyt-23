@@ -1,17 +1,27 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { useRouter } from 'vue-router';
-import { ArrowLeft, Search, Star, Pencil, Trash2, BookOpen } from 'lucide-vue-next';
+import { ref, computed, onMounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+import { ArrowLeft, Search, Star, Pencil, Trash2, BookOpen, Plus, X } from 'lucide-vue-next';
 import { useCookingStore, type Note } from '@/stores/cooking';
+import { dishes } from '@/data/dishes';
 import NoteEditor from '@/components/NoteEditor.vue';
 
 const router = useRouter();
+const route = useRoute();
 const store = useCookingStore();
 
 const searchKeyword = ref('');
 const showEditor = ref(false);
+const showDishPicker = ref(false);
 const editingNote = ref<Note | null>(null);
 const currentDish = ref<{ dishId: string; dishName: string; dishEmoji: string } | null>(null);
+
+onMounted(() => {
+  const searchQuery = route.query.search as string;
+  if (searchQuery) {
+    searchKeyword.value = searchQuery;
+  }
+});
 
 const filteredNotes = computed(() => {
   return store.searchNotes(searchKeyword.value);
@@ -86,21 +96,39 @@ function handleDelete(noteId: string) {
 function goBack() {
   router.back();
 }
+
+function handleNewNoteClick() {
+  showDishPicker.value = true;
+}
+
+function selectDishForNote(dishId: string, dishName: string, dishEmoji: string) {
+  showDishPicker.value = false;
+  openNewNote(dishId, dishName, dishEmoji);
+}
 </script>
 
 <template>
   <div class="container max-w-3xl mx-auto px-4 pt-6 pb-10">
-    <header class="flex items-center gap-3 mb-6 animate-fade-slide">
-      <button
-        class="w-10 h-10 card-soft flex items-center justify-center hover:shadow-soft transition-all active:scale-95"
-        @click="goBack"
-      >
-        <ArrowLeft :size="20" class="text-brown-800/70" />
-      </button>
-      <div>
-        <h1 class="text-display text-2xl text-brown-900">烹饪笔记</h1>
-        <p class="text-xs text-brown-800/60">共 {{ store.notes.length }} 条笔记</p>
+    <header class="flex items-center justify-between mb-6 animate-fade-slide">
+      <div class="flex items-center gap-3">
+        <button
+          class="w-10 h-10 card-soft flex items-center justify-center hover:shadow-soft transition-all active:scale-95"
+          @click="goBack"
+        >
+          <ArrowLeft :size="20" class="text-brown-800/70" />
+        </button>
+        <div>
+          <h1 class="text-display text-2xl text-brown-900">烹饪笔记</h1>
+          <p class="text-xs text-brown-800/60">共 {{ store.notes.length }} 条笔记</p>
+        </div>
       </div>
+      <button
+        class="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-apricot-500 to-orange-500 text-white font-medium text-sm shadow-lg hover:shadow-xl transition-all active:scale-95"
+        @click="handleNewNoteClick"
+      >
+        <Plus :size="18" />
+        <span>写笔记</span>
+      </button>
     </header>
 
     <div class="mb-6 animate-fade-slide" style="animation-delay: 0.05s">
@@ -128,9 +156,17 @@ function goBack() {
         <h3 class="text-display text-lg text-brown-800 mb-2">
           {{ searchKeyword ? '没有找到相关笔记' : '还没有笔记哦' }}
         </h3>
-        <p class="text-sm text-brown-800/60 max-w-xs mx-auto">
-          {{ searchKeyword ? '试试其他关键词吧～' : '完成一道菜后，记录下你的改良心得吧' }}
+        <p class="text-sm text-brown-800/60 max-w-xs mx-auto mb-6">
+          {{ searchKeyword ? '试试其他关键词吧～' : '记录每一次烹饪的心得和改良灵感' }}
         </p>
+        <button
+          v-if="!searchKeyword"
+          class="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-apricot-500 to-orange-500 text-white font-medium text-sm shadow-lg hover:shadow-xl transition-all active:scale-95"
+          @click="handleNewNoteClick"
+        >
+          <Plus :size="18" />
+          <span>写第一篇笔记</span>
+        </button>
       </div>
 
       <div
@@ -195,6 +231,53 @@ function goBack() {
         @close="showEditor = false"
         @save="handleSave"
       />
+    </Transition>
+
+    <Transition name="fade">
+      <div
+        v-if="showDishPicker"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4"
+      >
+        <div
+          class="absolute inset-0 bg-brown-900/40 backdrop-blur-sm animate-fade-slide"
+          @click="showDishPicker = false"
+        />
+
+        <div class="relative w-full max-w-md animate-pop-in">
+          <div class="card-soft overflow-hidden">
+            <div class="relative p-6">
+              <button
+                class="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center text-brown-800/50 hover:text-brown-800 hover:bg-brown-800/10 transition-colors"
+                @click="showDishPicker = false"
+              >
+                <X :size="20" />
+              </button>
+
+              <h3 class="text-display text-xl text-brown-900 mb-1">选择菜品</h3>
+              <p class="text-xs text-brown-800/60 mb-5">选择要写笔记的菜品</p>
+
+              <div class="grid grid-cols-2 gap-3 max-h-80 overflow-y-auto pr-1">
+                <button
+                  v-for="dish in dishes"
+                  :key="dish.id"
+                  class="flex items-center gap-3 p-3 rounded-2xl border-2 border-cream-300 bg-cream-50 hover:border-apricot-400 hover:bg-white transition-all active:scale-[0.98]"
+                  @click="selectDishForNote(dish.id, dish.name, dish.emoji)"
+                >
+                  <div class="text-3xl">{{ dish.emoji }}</div>
+                  <div class="text-left min-w-0">
+                    <div class="text-display text-brown-900 text-sm truncate">
+                      {{ dish.name }}
+                    </div>
+                    <div class="text-[10px] text-brown-800/50">
+                      {{ dish.time }}分钟 · {{ '⭐'.repeat(dish.difficulty) }}
+                    </div>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </Transition>
   </div>
 </template>

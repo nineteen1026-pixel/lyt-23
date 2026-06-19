@@ -205,7 +205,6 @@ function selectDish(id: string) {
     </Transition>
 
     <section
-      v-if="store.recentNotes.length > 0"
       class="mb-8 animate-fade-slide"
       style="animation-delay: 0.08s"
     >
@@ -225,12 +224,27 @@ function selectDish(id: string) {
           <ChevronRight :size="16" />
         </button>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+      <div v-if="store.recentNotes.length === 0">
+        <div
+          class="card-soft p-6 text-center cursor-pointer hover:shadow-card transition-all duration-300"
+          @click="router.push('/notes')"
+        >
+          <div class="text-5xl mb-3">📝</div>
+          <h4 class="text-display text-brown-900 mb-1">还没有笔记</h4>
+          <p class="text-sm text-brown-800/60 mb-3">记录每一次烹饪的心得和改良灵感</p>
+          <span class="inline-flex items-center gap-1 text-sm text-apricot-600">
+            去看看 <ChevronRight :size="16" />
+          </span>
+        </div>
+      </div>
+
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div
           v-for="note in store.recentNotes"
           :key="note.id"
           class="card-soft p-4 hover:shadow-card transition-all duration-300 cursor-pointer"
-          @click="router.push('/notes')"
+          @click="router.push({ path: '/notes', query: { search: note.dishName } })"
         >
           <div class="flex items-start gap-3">
             <div class="text-3xl shrink-0">{{ note.dishEmoji }}</div>

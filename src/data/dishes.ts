@@ -1,3 +1,10 @@
+export interface DishTasteProfile {
+  spicy: 0 | 1 | 2 | 3;
+  salty: 0 | 1 | 2 | 3;
+  sweet: 0 | 1 | 2 | 3;
+  oily: 0 | 1 | 2 | 3;
+}
+
 export interface Dish {
   id: string;
   name: string;
@@ -8,6 +15,8 @@ export interface Dish {
   color: string;
   seasonings: string[];
   description: string;
+  allergens: string[];
+  taste: DishTasteProfile;
 }
 
 export const dishes: Dish[] = [
@@ -21,6 +30,8 @@ export const dishes: Dish[] = [
     seasonings: ['盐', '糖'],
     color: '#FF6B6B',
     description: '国民家常菜，酸甜开胃超下饭',
+    allergens: ['egg'],
+    taste: { spicy: 0, salty: 1, sweet: 2, oily: 1 },
   },
   {
     id: 'miso-salmon',
@@ -32,6 +43,8 @@ export const dishes: Dish[] = [
     seasonings: ['味噌', '清酒', '蜂蜜'],
     color: '#FFA07A',
     description: '日式风味，外焦里嫩 omega-3 满满',
+    allergens: ['fish', 'soy'],
+    taste: { spicy: 0, salty: 2, sweet: 1, oily: 1 },
   },
   {
     id: 'veggie-pasta',
@@ -43,6 +56,8 @@ export const dishes: Dish[] = [
     seasonings: ['橄榄油', '黑胡椒', '盐'],
     color: '#A7C957',
     description: '清新健康，颜色缤纷的治愈系一餐',
+    allergens: ['wheat'],
+    taste: { spicy: 0, salty: 1, sweet: 0, oily: 2 },
   },
   {
     id: 'teriyaki-chicken',
@@ -54,6 +69,8 @@ export const dishes: Dish[] = [
     seasonings: ['酱油', '味醂', '清酒'],
     color: '#C97B3C',
     description: '浓郁照烧汁裹着嫩滑鸡腿，肉香四溢',
+    allergens: ['soy', 'wheat'],
+    taste: { spicy: 0, salty: 2, sweet: 2, oily: 2 },
   },
   {
     id: 'mushroom-soup',
@@ -65,6 +82,8 @@ export const dishes: Dish[] = [
     seasonings: ['黑胡椒', '盐', '百里香'],
     color: '#D4A373',
     description: '浓香丝滑，抚慰疲惫的温暖汤品',
+    allergens: ['milk', 'mushroom'],
+    taste: { spicy: 0, salty: 1, sweet: 0, oily: 2 },
   },
   {
     id: 'avocado-toast',
@@ -76,6 +95,8 @@ export const dishes: Dish[] = [
     seasonings: ['黑胡椒', '盐', '橄榄油'],
     color: '#88B04B',
     description: '快手早午餐，健康又高颜值',
+    allergens: ['wheat', 'egg'],
+    taste: { spicy: 0, salty: 1, sweet: 0, oily: 2 },
   },
 ];
 

@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onUnmounted } from 'vue';
+import { useProfileStore } from '@/stores/profile';
+
+const profileStore = useProfileStore();
 
 interface SeasoningConfig {
   color: string;
@@ -564,7 +567,7 @@ onUnmounted(cleanUp);
       <div
         v-for="(s, i) in seasonings"
         :key="'tag-' + s"
-        class="flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-sm font-medium transition-all duration-300 border-2"
+        class="flex flex-col items-center justify-center gap-1 py-2 px-2 rounded-xl text-sm font-medium transition-all duration-300 border-2"
         :class="{
           'bg-white border-cream-300 text-brown-800/60':
             seasoningStates.get(s) === 'idle',
@@ -574,12 +577,29 @@ onUnmounted(cleanUp);
             seasoningStates.get(s) === 'done',
         }"
       >
-        <span class="text-base">{{ getSeasoningConfig(s).emoji }}</span>
-        <span class="truncate">{{ s }}</span>
-        <span
-          v-if="seasoningStates.get(s) === 'done'"
-          class="text-matcha-600 font-bold"
-        >✓</span>
+        <div class="flex items-center justify-center gap-1.5 w-full">
+          <span class="text-base">{{ getSeasoningConfig(s).emoji }}</span>
+          <span class="truncate">{{ s }}</span>
+          <span
+            v-if="seasoningStates.get(s) === 'done'"
+            class="text-matcha-600 font-bold"
+          >✓</span>
+        </div>
+        <div
+          class="text-[10px] leading-none transition-colors duration-300"
+          :class="{
+            'text-brown-800/50': seasoningStates.get(s) === 'idle',
+            'text-apricot-600/80': seasoningStates.get(s) === 'sprinkling',
+            'text-matcha-600/80': seasoningStates.get(s) === 'done',
+          }"
+        >
+          <template v-if="profileStore.getRecommendedDosage(s) !== '正常'">
+            建议：{{ profileStore.getRecommendedDosage(s) }}
+          </template>
+          <template v-else>
+            正常用量
+          </template>
+        </div>
       </div>
     </div>
 

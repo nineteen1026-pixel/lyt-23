@@ -1,0 +1,234 @@
+<script setup lang="ts">
+import { useRouter } from 'vue-router';
+import { ArrowLeft, User, AlertTriangle, Sparkles, RotateCcw } from 'lucide-vue-next';
+import {
+  useProfileStore,
+  ALLERGENS,
+  SPICY_LEVELS,
+  SALT_LEVELS,
+  SWEET_LEVELS,
+  OIL_LEVELS,
+  type SpicyLevel,
+  type SaltLevel,
+  type SweetLevel,
+  type OilLevel,
+} from '@/stores/profile';
+
+const router = useRouter();
+const profileStore = useProfileStore();
+</script>
+
+<template>
+  <div class="container max-w-4xl mx-auto px-4 pt-8">
+    <header class="mb-8 animate-fade-slide">
+      <button
+        class="flex items-center gap-2 card-soft px-4 py-2.5 mb-6 hover:shadow-soft transition-all active:scale-95"
+        @click="router.push('/')"
+      >
+        <ArrowLeft :size="18" class="text-brown-800/70" />
+        <span class="text-sm text-brown-800/80 font-medium">回到厨房</span>
+      </button>
+
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 class="text-display text-4xl text-brown-900 flex items-center gap-2">
+            <User class="text-apricot-500" :size="36" />
+            我的饮食档案
+          </h1>
+          <p class="text-sm text-brown-800/70 mt-2">
+            设置你的过敏源和口味偏好，让小厨房更懂你 ✿
+          </p>
+        </div>
+        <button
+          class="flex items-center gap-2 card-soft px-4 py-2.5 hover:shadow-soft transition-all active:scale-95 text-brown-800/70"
+          @click="profileStore.resetProfile()"
+        >
+          <RotateCcw :size="16" />
+          <span class="text-sm">重置</span>
+        </button>
+      </div>
+    </header>
+
+    <section class="mb-10 animate-fade-slide" style="animation-delay: 0.05s">
+      <div class="flex items-center gap-2 mb-4">
+        <AlertTriangle class="text-red-400" :size="22" />
+        <h2 class="text-display text-xl text-brown-900">过敏源</h2>
+        <span class="text-xs text-brown-800/60 ml-1">（勾选后会在首页自动过滤含过敏源的菜品）</span>
+      </div>
+      <div class="card-soft p-5">
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+          <button
+            v-for="allergen in ALLERGENS"
+            :key="allergen.id"
+            class="flex items-center gap-2 px-4 py-3 rounded-2xl border-2 transition-all duration-300 text-left active:scale-95"
+            :class="{
+              'bg-red-50 border-red-300 text-red-700 shadow-sm':
+                profileStore.allergens.includes(allergen.id),
+              'bg-white border-cream-300 text-brown-800/70 hover:border-cream-400':
+                !profileStore.allergens.includes(allergen.id),
+            }"
+            @click="profileStore.toggleAllergen(allergen.id)"
+          >
+            <span class="text-2xl">{{ allergen.emoji }}</span>
+            <div class="flex-1">
+              <div class="text-sm font-medium">{{ allergen.name }}</div>
+              <div
+                v-if="profileStore.allergens.includes(allergen.id)"
+                class="text-[11px] text-red-500 mt-0.5"
+              >
+                已标记
+              </div>
+            </div>
+            <div
+              v-if="profileStore.allergens.includes(allergen.id)"
+              class="w-5 h-5 rounded-full bg-red-400 flex items-center justify-center text-white text-xs font-bold"
+            >
+              ✓
+            </div>
+          </button>
+        </div>
+        <div
+          v-if="profileStore.allergens.length === 0"
+          class="text-center text-sm text-brown-800/50 py-4"
+        >
+          还没有标记任何过敏源～
+        </div>
+      </div>
+    </section>
+
+    <section class="mb-10 animate-fade-slide" style="animation-delay: 0.1s">
+      <div class="flex items-center gap-2 mb-4">
+        <Sparkles class="text-apricot-500" :size="22" />
+        <h2 class="text-display text-xl text-brown-900">口味偏好</h2>
+        <span class="text-xs text-brown-800/60 ml-1">（会影响调味步骤的建议用量）</span>
+      </div>
+
+      <div class="card-soft p-5 space-y-6">
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-sm font-medium text-brown-900">🌶️ 辣度偏好</span>
+            <span class="text-xs text-brown-800/60">
+              {{ SPICY_LEVELS.find((l) => l.value === profileStore.tastePreference.spicy)?.label }}
+            </span>
+          </div>
+          <div class="grid grid-cols-4 gap-2">
+            <button
+              v-for="level in SPICY_LEVELS"
+              :key="level.value"
+              class="py-2.5 px-2 rounded-xl text-sm transition-all duration-300 border-2 active:scale-95"
+              :class="{
+                'bg-apricot-100 border-apricot-400 text-apricot-700 shadow-sm':
+                  profileStore.tastePreference.spicy === level.value,
+                'bg-white border-cream-300 text-brown-800/70 hover:border-cream-400':
+                  profileStore.tastePreference.spicy !== level.value,
+              }"
+              @click="profileStore.setTaste('spicy', level.value as SpicyLevel)"
+            >
+              <div class="text-lg mb-0.5">{{ level.emoji }}</div>
+              <div class="text-xs">{{ level.label }}</div>
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-sm font-medium text-brown-900">🧂 咸淡偏好</span>
+            <span class="text-xs text-brown-800/60">
+              {{ SALT_LEVELS.find((l) => l.value === profileStore.tastePreference.salt)?.label }}
+            </span>
+          </div>
+          <div class="grid grid-cols-3 gap-2">
+            <button
+              v-for="level in SALT_LEVELS"
+              :key="level.value"
+              class="py-2.5 px-2 rounded-xl text-sm transition-all duration-300 border-2 active:scale-95"
+              :class="{
+                'bg-apricot-100 border-apricot-400 text-apricot-700 shadow-sm':
+                  profileStore.tastePreference.salt === level.value,
+                'bg-white border-cream-300 text-brown-800/70 hover:border-cream-400':
+                  profileStore.tastePreference.salt !== level.value,
+              }"
+              @click="profileStore.setTaste('salt', level.value as SaltLevel)"
+            >
+              <div class="text-lg mb-0.5">{{ level.emoji }}</div>
+              <div class="text-xs">{{ level.label }}</div>
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-sm font-medium text-brown-900">🍬 甜度偏好</span>
+            <span class="text-xs text-brown-800/60">
+              {{ SWEET_LEVELS.find((l) => l.value === profileStore.tastePreference.sweet)?.label }}
+            </span>
+          </div>
+          <div class="grid grid-cols-4 gap-2">
+            <button
+              v-for="level in SWEET_LEVELS"
+              :key="level.value"
+              class="py-2.5 px-2 rounded-xl text-sm transition-all duration-300 border-2 active:scale-95"
+              :class="{
+                'bg-apricot-100 border-apricot-400 text-apricot-700 shadow-sm':
+                  profileStore.tastePreference.sweet === level.value,
+                'bg-white border-cream-300 text-brown-800/70 hover:border-cream-400':
+                  profileStore.tastePreference.sweet !== level.value,
+              }"
+              @click="profileStore.setTaste('sweet', level.value as SweetLevel)"
+            >
+              <div class="text-lg mb-0.5">{{ level.emoji }}</div>
+              <div class="text-xs">{{ level.label }}</div>
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-sm font-medium text-brown-900">🫒 油度偏好</span>
+            <span class="text-xs text-brown-800/60">
+              {{ OIL_LEVELS.find((l) => l.value === profileStore.tastePreference.oil)?.label }}
+            </span>
+          </div>
+          <div class="grid grid-cols-3 gap-2">
+            <button
+              v-for="level in OIL_LEVELS"
+              :key="level.value"
+              class="py-2.5 px-2 rounded-xl text-sm transition-all duration-300 border-2 active:scale-95"
+              :class="{
+                'bg-apricot-100 border-apricot-400 text-apricot-700 shadow-sm':
+                  profileStore.tastePreference.oil === level.value,
+                'bg-white border-cream-300 text-brown-800/70 hover:border-cream-400':
+                  profileStore.tastePreference.oil !== level.value,
+              }"
+              @click="profileStore.setTaste('oil', level.value as OilLevel)"
+            >
+              <div class="text-lg mb-0.5">{{ level.emoji }}</div>
+              <div class="text-xs">{{ level.label }}</div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="mb-10 animate-fade-slide" style="animation-delay: 0.15s">
+      <div class="card-soft p-5 bg-gradient-to-br from-apricot-50 to-cream-100 border-apricot-200">
+        <div class="flex items-start gap-3">
+          <div class="text-3xl">💡</div>
+          <div>
+            <h3 class="text-display text-lg text-brown-900 mb-1">小档案的作用</h3>
+            <ul class="text-sm text-brown-800/70 space-y-1.5 leading-relaxed">
+              <li>• 首页会自动把含有你过敏源的菜品排到最后或隐藏</li>
+              <li>• 口味匹配度高的菜品会优先展示给你</li>
+              <li>• 调味步骤会根据你的口味偏好显示建议用量（如"少放盐"、"多加糖"）</li>
+              <li>• 所有设置保存在本地，换浏览器或清缓存需要重新设置哦～</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="text-center text-xs text-brown-800/50 py-4">
+      好好吃饭，慢慢生活 · 你的小厨房更懂你啦 🧡
+    </footer>
+  </div>
+</template>

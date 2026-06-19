@@ -1,16 +1,33 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { CalendarCheck, Flame, Award } from 'lucide-vue-next';
+import { CalendarCheck, Flame, Award, User } from 'lucide-vue-next';
 import { useCookingStore } from '@/stores/cooking';
+import { useProfileStore } from '@/stores/profile';
 import { unlocks } from '@/data/unlocks';
 
 const store = useCookingStore();
+const profileStore = useProfileStore();
 const router = useRouter();
 
 const activeApronData = computed(() =>
   unlocks.aprons.find((a) => a.id === store.activeApron) ?? unlocks.aprons[0],
 );
+
+const profileSummary = computed(() => {
+  const parts: string[] = [];
+  if (profileStore.allergens.length > 0) {
+    parts.push(`${profileStore.allergens.length} 项过敏源`);
+  }
+  const pref = profileStore.tastePreference;
+  const isDefault =
+    pref.spicy === 'none' && pref.salt === 'normal' && pref.sweet === 'normal' && pref.oil === 'normal';
+  if (!isDefault || profileStore.allergens.length === 0) {
+    parts.push('已设置口味');
+  }
+  if (parts.length === 0) return '点击设置';
+  return parts.join(' · ');
+});
 
 function getApronBackground(color: string, stripe: string | null): string {
   switch (stripe) {
@@ -53,26 +70,41 @@ function getApronBackground(color: string, stripe: string | null): string {
       </div>
     </div>
 
-    <button
-      class="flex items-center gap-2 card-soft px-5 py-3 hover:shadow-soft transition-all active:scale-95"
-      @click="router.push('/achievements')"
-    >
-      <div
-        class="w-10 h-10 rounded-full border-2 border-cream-300 flex items-end justify-center overflow-hidden"
-        :style="{ background: '#FFE8D6' }"
+    <div class="flex items-center gap-3">
+      <button
+        class="flex items-center gap-2 card-soft px-4 py-3 hover:shadow-soft transition-all active:scale-95"
+        @click="router.push('/profile')"
+      >
+        <div class="w-10 h-10 rounded-full bg-apricot-500/15 flex items-center justify-center text-apricot-500">
+          <User :size="18" :stroke-width="2.2" />
+        </div>
+        <div class="text-left">
+          <div class="text-sm font-medium text-brown-800 leading-none">饮食档案</div>
+          <div class="text-[11px] text-brown-800/60 mt-1">{{ profileSummary }}</div>
+        </div>
+      </button>
+
+      <button
+        class="flex items-center gap-2 card-soft px-5 py-3 hover:shadow-soft transition-all active:scale-95"
+        @click="router.push('/achievements')"
       >
         <div
-          class="w-[80%] h-[65%] rounded-t-lg"
-          :style="{ background: getApronBackground(activeApronData.color, activeApronData.stripe) }"
-        />
-      </div>
-      <div class="text-left">
-        <div class="text-sm font-medium text-brown-800 leading-none">成就 & 换装</div>
-        <div class="text-[11px] text-brown-800/60 mt-1 flex items-center gap-1">
-          <Award :size="12" />
-          <span>{{ store.unlockedDecorations.length + store.unlockedAprons.length }} 已解锁</span>
+          class="w-10 h-10 rounded-full border-2 border-cream-300 flex items-end justify-center overflow-hidden"
+          :style="{ background: '#FFE8D6' }"
+        >
+          <div
+            class="w-[80%] h-[65%] rounded-t-lg"
+            :style="{ background: getApronBackground(activeApronData.color, activeApronData.stripe) }"
+          />
         </div>
-      </div>
-    </button>
+        <div class="text-left">
+          <div class="text-sm font-medium text-brown-800 leading-none">成就 & 换装</div>
+          <div class="text-[11px] text-brown-800/60 mt-1 flex items-center gap-1">
+            <Award :size="12" />
+            <span>{{ store.unlockedDecorations.length + store.unlockedAprons.length }} 已解锁</span>
+          </div>
+        </div>
+      </button>
+    </div>
   </div>
 </template>

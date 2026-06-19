@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { CalendarCheck, Flame, Award, User } from 'lucide-vue-next';
+import { CalendarCheck, Flame, Award, User, BarChart3 } from 'lucide-vue-next';
 import { useCookingStore } from '@/stores/cooking';
 import { useProfileStore } from '@/stores/profile';
 import { unlocks } from '@/data/unlocks';
@@ -81,6 +81,19 @@ function getApronBackground(color: string, stripe: string | null): string {
         <div class="text-left">
           <div class="text-sm font-medium text-brown-800 leading-none">饮食档案</div>
           <div class="text-[11px] text-brown-800/60 mt-1">{{ profileSummary }}</div>
+        </div>
+      </button>
+
+      <button
+        class="flex items-center gap-2 card-soft px-4 py-3 hover:shadow-soft transition-all active:scale-95"
+        @click="router.push('/stats')"
+      >
+        <div class="w-10 h-10 rounded-full bg-matcha-500/15 flex items-center justify-center text-matcha-600">
+          <BarChart3 :size="18" :stroke-width="2.2" />
+        </div>
+        <div class="text-left">
+          <div class="text-sm font-medium text-brown-800 leading-none">烹饪统计</div>
+          <div class="text-[11px] text-brown-800/60 mt-1">{{ store.cookingHistory.length }} 次记录</div>
         </div>
       </button>
 

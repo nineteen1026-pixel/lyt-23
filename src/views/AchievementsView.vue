@@ -1,14 +1,31 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import { ArrowLeft, ChefHat, Sparkles } from 'lucide-vue-next';
+import { ArrowLeft, ChefHat, Sparkles, Target, Award } from 'lucide-vue-next';
 import CheckInCalendar from '@/components/achievements/CheckInCalendar.vue';
 import UnlockProgress from '@/components/achievements/UnlockProgress.vue';
 import DecorationGrid from '@/components/achievements/DecorationGrid.vue';
 import ApronSelector from '@/components/achievements/ApronSelector.vue';
+import ChallengeList from '@/components/challenges/ChallengeList.vue';
 import { useCookingStore } from '@/stores/cooking';
+import { useChallengesStore } from '@/stores/challenges';
+import { challenges } from '@/data/challenges';
+import { computed } from 'vue';
 
 const router = useRouter();
 const store = useCookingStore();
+const challengesStore = useChallengesStore();
+
+const unlockedBadgeDetails = computed(() => {
+  return challenges
+    .filter((c) => challengesStore.isBadgeUnlocked(c.badge.id))
+    .map((c) => c.badge);
+});
+
+const totalBadgeCount = computed(() => challenges.length);
+
+function handleStartChallenge(challengeId: string) {
+  challengesStore.startChallenge(challengeId);
+}
 </script>
 
 <template>
@@ -54,17 +71,83 @@ const store = useCookingStore();
       <CheckInCalendar />
     </section>
 
+    <section class="mb-10 animate-fade-slide" style="animation-delay: 0.08s">
+      <div class="flex items-end justify-between mb-4">
+        <div>
+          <h2 class="text-display text-xl text-brown-900 flex items-center gap-2">
+            <Award :size="20" class="text-apricot-500" />
+            我的徽章
+          </h2>
+          <p class="text-xs text-brown-800/60 mt-1">完成挑战任务解锁专属徽章</p>
+        </div>
+        <div class="flex items-baseline gap-1">
+          <span class="text-2xl font-bold text-apricot-500">{{ unlockedBadgeDetails.length }}</span>
+          <span class="text-brown-800/50">/</span>
+          <span class="text-lg text-brown-800/70">{{ totalBadgeCount }}</span>
+        </div>
+      </div>
+
+      <div v-if="unlockedBadgeDetails.length === 0" class="card-soft p-6 text-center">
+        <div class="text-5xl mb-3">🏅</div>
+        <h4 class="text-display text-brown-900 mb-1">暂无徽章</h4>
+        <p class="text-sm text-brown-800/60">去下方挑战任务中赢取你的第一枚徽章吧～</p>
+      </div>
+
+      <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+        <div
+          v-for="badge in unlockedBadgeDetails"
+          :key="badge.id"
+          class="card-soft p-4 flex flex-col items-center gap-2 ring-2 ring-matcha-400/40 bg-matcha-400/10 hover:-translate-y-1 hover:shadow-card transition-all duration-300"
+        >
+          <div
+            class="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shadow-inner"
+            style="background: linear-gradient(135deg, #E8F5D4, #FFF8F0);"
+          >
+            {{ badge.emoji }}
+          </div>
+          <h4 class="text-display text-sm text-brown-900 text-center">{{ badge.name }}</h4>
+          <p class="text-xs text-brown-800/50 text-center leading-tight">{{ badge.description }}</p>
+        </div>
+        <div
+          v-for="i in Math.max(0, 4 - (unlockedBadgeDetails.length % 4 === 0 ? 4 : unlockedBadgeDetails.length % 4))"
+          :key="`lock-${i}`"
+          class="card-soft p-4 flex flex-col items-center gap-2 opacity-50"
+        >
+          <div
+            class="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl"
+            style="background: linear-gradient(135deg, #FFE8D6, #FFF8F0);"
+          >
+            🔒
+          </div>
+          <h4 class="text-display text-sm text-brown-800/50 text-center">未解锁</h4>
+        </div>
+      </div>
+    </section>
+
     <section class="mb-10 animate-fade-slide" style="animation-delay: 0.1s">
+      <div class="flex items-end justify-between mb-4">
+        <div>
+          <h2 class="text-display text-xl text-brown-900 flex items-center gap-2">
+            <Target :size="20" class="text-apricot-500" />
+            挑战任务
+          </h2>
+          <p class="text-xs text-brown-800/60 mt-1">在规定周期内完成指定菜品，解锁徽章奖励</p>
+        </div>
+      </div>
+      <ChallengeList @start="handleStartChallenge" />
+    </section>
+
+    <section class="mb-10 animate-fade-slide" style="animation-delay: 0.2s">
       <h2 class="text-display text-xl text-brown-900 mb-4">🎯 解锁进度</h2>
       <UnlockProgress />
     </section>
 
-    <section class="mb-10 animate-fade-slide" style="animation-delay: 0.15s">
+    <section class="mb-10 animate-fade-slide" style="animation-delay: 0.25s">
       <h2 class="text-display text-xl text-brown-900 mb-4">🏠 厨房摆件</h2>
       <DecorationGrid />
     </section>
 
-    <section class="mb-10 animate-fade-slide" style="animation-delay: 0.2s">
+    <section class="mb-10 animate-fade-slide" style="animation-delay: 0.3s">
       <h2 class="text-display text-xl text-brown-900 mb-4">👩‍🍳 围裙皮肤</h2>
       <ApronSelector />
     </section>

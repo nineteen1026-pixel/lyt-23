@@ -4,7 +4,9 @@ import { useRouter, useRoute } from 'vue-router';
 import { ArrowLeft, ChevronLeft, ChevronRight, Home } from 'lucide-vue-next';
 import { getDishById } from '@/data/dishes';
 import { useCookingStore, type UnlockResult } from '@/stores/cooking';
+import { useChallengesStore, type ChallengeRewardResult } from '@/stores/challenges';
 import { unlocks, type Decoration, type Apron } from '@/data/unlocks';
+import type { ChallengeBadge } from '@/data/challenges';
 import StepProgress from '@/components/cooking/StepProgress.vue';
 import WashStep from '@/components/cooking/WashStep.vue';
 import CutStep from '@/components/cooking/CutStep.vue';
@@ -13,6 +15,7 @@ import BakeStep from '@/components/cooking/BakeStep.vue';
 import FinishModal from '@/components/FinishModal.vue';
 import UnlockModal from '@/components/UnlockModal.vue';
 import NoteEditor from '@/components/NoteEditor.vue';
+import ChallengeRewardModal from '@/components/challenges/ChallengeRewardModal.vue';
 
 interface UnlockItem {
   type: 'decoration' | 'apron';
@@ -25,6 +28,7 @@ interface UnlockItem {
 const route = useRoute();
 const router = useRouter();
 const store = useCookingStore();
+const challengesStore = useChallengesStore();
 
 const dishId = computed(() => route.params.dishId as string);
 const dish = computed(() => getDishById(dishId.value));
@@ -35,6 +39,8 @@ const showFinishModal = ref(false);
 const showUnlockModal = ref(false);
 const pendingUnlockItems = ref<UnlockItem[]>([]);
 const showNoteEditor = ref(false);
+const showChallengeReward = ref(false);
+const pendingChallengeBadges = ref<ChallengeBadge[]>([]);
 
 const activeApronData = computed(() =>
   unlocks.aprons.find((a) => a.id === store.activeApron) ?? unlocks.aprons[0],
@@ -77,8 +83,20 @@ function onStepComplete(stepIndex: number) {
     setTimeout(() => {
       if (dish.value) {
         store.addCookingRecord(dish.value.id);
+        if (store.isCheckedInToday) {
+          const challengeResult = challengesStore.recordCooking(dish.value.id);
+          if (challengeResult.newBadges.length > 0) {
+            pendingChallengeBadges.value = challengeResult.newBadges;
+          }
+        }
       }
       showFinishModal.value = true;
+      if (pendingChallengeBadges.value.length > 0) {
+        setTimeout(() => {
+          showFinishModal.value = false;
+          showChallengeReward.value = true;
+        }, 500);
+      }
     }, 1000);
   }
 }
@@ -108,11 +126,21 @@ function handleCheckIn() {
     items.push({ type: 'apron', name: a.name, color: a.color, stripe: a.stripe });
   });
 
+  let challengeResult: ChallengeRewardResult | null = null;
+  if (dish.value) {
+    challengeResult = challengesStore.recordCooking(dish.value.id);
+  }
+
   showFinishModal.value = false;
   if (items.length > 0) {
     pendingUnlockItems.value = items;
     setTimeout(() => {
       showUnlockModal.value = true;
+    }, 300);
+  } else if (challengeResult && challengeResult.newBadges.length > 0) {
+    pendingChallengeBadges.value = challengeResult.newBadges;
+    setTimeout(() => {
+      showChallengeReward.value = true;
     }, 300);
   }
 }
@@ -120,13 +148,22 @@ function handleCheckIn() {
 function handleBackHome() {
   showFinishModal.value = false;
   showUnlockModal.value = false;
+  showChallengeReward.value = false;
+  pendingChallengeBadges.value = [];
   router.push('/');
 }
 
 function handleCookMore() {
   showFinishModal.value = false;
   showUnlockModal.value = false;
+  showChallengeReward.value = false;
+  pendingChallengeBadges.value = [];
   router.push('/');
+}
+
+function handleCloseChallengeReward() {
+  showChallengeReward.value = false;
+  pendingChallengeBadges.value = [];
 }
 
 function handleWriteNote() {
@@ -278,6 +315,14 @@ function handleSaveNote(data: { content: string; rating: 1 | 2 | 3 | 4 | 5 }) {
         :dish-emoji="dish.emoji"
         @close="showNoteEditor = false"
         @save="handleSaveNote"
+      />
+    </Transition>
+
+    <Transition name="fade">
+      <ChallengeRewardModal
+        v-if="showChallengeReward && pendingChallengeBadges.length > 0"
+        :badges="pendingChallengeBadges"
+        @close="handleCloseChallengeReward"
       />
     </Transition>
   </div>

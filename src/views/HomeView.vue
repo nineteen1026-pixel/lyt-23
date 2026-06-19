@@ -6,12 +6,35 @@ import { dishes, type Dish } from '@/data/dishes';
 import { useCookingStore } from '@/stores/cooking';
 import { useProfileStore, ALLERGENS } from '@/stores/profile';
 import { unlocks } from '@/data/unlocks';
-import { computed } from 'vue';
-import { AlertTriangle, Sparkles, BookOpen, ChevronRight, Star } from 'lucide-vue-next';
+import { computed, ref, onMounted } from 'vue';
+import { AlertTriangle, Sparkles, BookOpen, ChevronRight, Star, Target, Trophy } from 'lucide-vue-next';
+import { useChallengesStore } from '@/stores/challenges';
+import type { ChallengeBadge } from '@/data/challenges';
+import ChallengeProgress from '@/components/challenges/ChallengeProgress.vue';
+import ChallengeRewardModal from '@/components/challenges/ChallengeRewardModal.vue';
+import ChallengeList from '@/components/challenges/ChallengeList.vue';
 
 const router = useRouter();
 const store = useCookingStore();
 const profileStore = useProfileStore();
+const challengesStore = useChallengesStore();
+
+const showChallengeList = ref(false);
+const showChallengeReward = ref(false);
+const pendingChallengeBadges = ref<ChallengeBadge[]>([]);
+
+onMounted(() => {
+  challengesStore.resetExpiredChallenges();
+});
+
+function handleStartChallenge(challengeId: string) {
+  challengesStore.startChallenge(challengeId);
+}
+
+function handleCloseChallengeReward() {
+  showChallengeReward.value = false;
+  pendingChallengeBadges.value = [];
+}
 
 const activeDecoration = computed(() =>
   unlocks.decorations.find((d) => d.id === store.activeDecoration),
@@ -211,6 +234,69 @@ function selectDish(id: string) {
       <div class="flex items-end justify-between mb-4">
         <div>
           <h2 class="text-display text-xl text-brown-900 flex items-center gap-2">
+            <Target :size="20" class="text-apricot-500" />
+            挑战任务
+          </h2>
+          <p class="text-xs text-brown-800/60 mt-1">完成挑战解锁专属徽章～</p>
+        </div>
+        <button
+          class="flex items-center gap-1 text-sm text-apricot-600 hover:text-apricot-700 transition-colors"
+          @click="showChallengeList = true"
+        >
+          <span>查看全部</span>
+          <ChevronRight :size="16" />
+        </button>
+      </div>
+
+      <div v-if="challengesStore.inProgressChallenges.length === 0">
+        <div
+          class="card-soft p-6 text-center cursor-pointer hover:shadow-card transition-all duration-300"
+          @click="showChallengeList = true"
+        >
+          <div class="text-5xl mb-3">🎯</div>
+          <h4 class="text-display text-brown-900 mb-1">暂无进行中的挑战</h4>
+          <p class="text-sm text-brown-800/60 mb-3">点击开始挑战，赢取专属徽章</p>
+          <span class="inline-flex items-center gap-1 text-sm text-apricot-600">
+            去看看 <ChevronRight :size="16" />
+          </span>
+        </div>
+      </div>
+
+      <div v-else class="space-y-3">
+        <div
+          v-for="challenge in challengesStore.inProgressChallenges.slice(0, 2)"
+          :key="challenge.id"
+          class="card-soft p-4 ring-2 ring-apricot-400/30 bg-apricot-400/5 hover:shadow-card transition-all duration-300 cursor-pointer"
+          @click="showChallengeList = true"
+        >
+          <div class="flex items-start gap-4">
+            <div
+              class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0"
+              style="background: linear-gradient(135deg, #FFE8D6, #FFF8F0);"
+            >
+              {{ challenge.badge.emoji }}
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-1">
+                <h4 class="text-display text-base text-brown-900 truncate">{{ challenge.title }}</h4>
+                <span class="chip bg-apricot-400/30 text-apricot-600 text-xs shrink-0">
+                  进行中
+                </span>
+              </div>
+              <ChallengeProgress :challenge="challenge" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section
+      class="mb-8 animate-fade-slide"
+      style="animation-delay: 0.1s"
+    >
+      <div class="flex items-end justify-between mb-4">
+        <div>
+          <h2 class="text-display text-xl text-brown-900 flex items-center gap-2">
             <BookOpen :size="20" class="text-apricot-500" />
             最近笔记
           </h2>
@@ -306,4 +392,43 @@ function selectDish(id: string) {
       Made with 🧡 · 好好吃饭，慢慢生活
     </footer>
   </div>
+
+  <Transition name="fade">
+    <div
+      v-if="showChallengeList"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4"
+    >
+      <div
+        class="absolute inset-0 bg-brown-900/40 backdrop-blur-sm animate-fade-slide"
+        @click="showChallengeList = false"
+      />
+      <div class="relative w-full max-w-2xl max-h-[85vh] overflow-hidden animate-pop-in">
+        <div class="card-soft overflow-hidden flex flex-col max-h-[85vh]">
+          <div class="p-5 pb-3 border-b border-cream-200 flex items-center justify-between shrink-0">
+            <div class="flex items-center gap-2">
+              <Trophy :size="24" class="text-apricot-500" />
+              <h2 class="text-display text-2xl text-brown-900">挑战任务</h2>
+            </div>
+            <button
+              class="w-9 h-9 rounded-full bg-cream-100 hover:bg-cream-200 flex items-center justify-center text-brown-800/70 transition-all active:scale-95"
+              @click="showChallengeList = false"
+            >
+              ✕
+            </button>
+          </div>
+          <div class="p-5 overflow-y-auto">
+            <ChallengeList @start="handleStartChallenge" />
+          </div>
+        </div>
+      </div>
+    </div>
+  </Transition>
+
+  <Transition name="fade">
+    <ChallengeRewardModal
+      v-if="showChallengeReward && pendingChallengeBadges.length > 0"
+      :badges="pendingChallengeBadges"
+      @close="handleCloseChallengeReward"
+    />
+  </Transition>
 </template>

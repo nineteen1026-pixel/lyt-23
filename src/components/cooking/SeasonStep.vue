@@ -593,7 +593,7 @@ onUnmounted(cleanUp);
       </div>
     </div>
 
-    <div class="grid grid-cols-3 gap-2 mb-5">
+    <div class="grid grid-cols-3 gap-2 mb-5" data-onboarding="seasoning-tip">
       <div
         v-for="(s, i) in seasonings"
         :key="'tag-' + s"

@@ -24,16 +24,23 @@ import {
   getCurrentSeasonalDecorations,
   getCurrentSeasonalAprons,
 } from '@/data/seasonal';
+import { useOnboardingStore } from '@/stores/onboarding';
 
 const router = useRouter();
 const store = useCookingStore();
 const profileStore = useProfileStore();
 const challengesStore = useChallengesStore();
+const onboardingStore = useOnboardingStore();
 
 const showChallengeList = ref(false);
 
 onMounted(() => {
   challengesStore.resetExpiredChallenges();
+  if (!onboardingStore.isCompleted) {
+    setTimeout(() => {
+      onboardingStore.startFlow('home');
+    }, 500);
+  }
 });
 
 function handleStartChallenge(challengeId: string) {
@@ -287,6 +294,7 @@ function selectDish(id: string) {
     <section
       class="mb-8 animate-fade-slide"
       style="animation-delay: 0.08s"
+      data-onboarding="challenge-section"
     >
       <div class="flex items-end justify-between mb-4">
         <div>
@@ -507,6 +515,7 @@ function selectDish(id: string) {
           :has-allergen="item.hasAllergen"
           :matching-allergens="item.matchingAllergens"
           :taste-score="item.tasteScore"
+          :data-onboarding="idx === 0 ? 'first-dish' : undefined"
           @select="selectDish(item.dish.id)"
         />
       </div>
@@ -539,6 +548,7 @@ function selectDish(id: string) {
         :has-allergen="item.hasAllergen"
         :matching-allergens="item.matchingAllergens"
         :taste-score="item.tasteScore"
+        :data-onboarding="idx === 0 && seasonalDishesOnly.length === 0 ? 'first-dish' : undefined"
         @select="selectDish(item.dish.id)"
       />
     </section>

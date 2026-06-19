@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router';
+import OnboardingOverlay from '@/components/OnboardingOverlay.vue';
 </script>
 
 <template>
@@ -9,5 +10,6 @@ import { RouterView } from 'vue-router';
         <component :is="Component" />
       </transition>
     </RouterView>
+    <OnboardingOverlay />
   </div>
 </template>

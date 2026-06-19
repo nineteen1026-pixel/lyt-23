@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { ArrowLeft, ChevronLeft, ChevronRight, Home, Leaf, AlertCircle } from 'lucide-vue-next';
 import { getDishById } from '@/data/dishes';
@@ -22,6 +22,7 @@ import FinishModal from '@/components/FinishModal.vue';
 import UnlockModal from '@/components/UnlockModal.vue';
 import NoteEditor from '@/components/NoteEditor.vue';
 import ChallengeRewardModal from '@/components/challenges/ChallengeRewardModal.vue';
+import { useOnboardingStore } from '@/stores/onboarding';
 
 interface UnlockItem {
   type: 'decoration' | 'apron';
@@ -35,6 +36,7 @@ const route = useRoute();
 const router = useRouter();
 const store = useCookingStore();
 const challengesStore = useChallengesStore();
+const onboardingStore = useOnboardingStore();
 
 const dishId = computed(() => route.params.dishId as string);
 const dish = computed(() => getDishById(dishId.value));
@@ -95,6 +97,14 @@ watch(
   },
   { immediate: true },
 );
+
+onMounted(() => {
+  if (!onboardingStore.isCompleted && dish.value && isDishAvailable.value && !isLockedByThreshold.value) {
+    setTimeout(() => {
+      onboardingStore.startFlow('cooking');
+    }, 500);
+  }
+});
 
 function onStepComplete(stepIndex: number) {
   stepCompleted.value[stepIndex] = true;
@@ -345,7 +355,7 @@ function handleSaveNote(data: { content: string; rating: 1 | 2 | 3 | 4 | 5 }) {
         </div>
       </header>
 
-      <div class="mb-8 animate-fade-slide" style="animation-delay: 0.05s">
+      <div class="mb-8 animate-fade-slide" style="animation-delay: 0.05s" data-onboarding="step-progress">
         <StepProgress :current-step="currentStep" />
       </div>
 
@@ -406,6 +416,7 @@ function handleSaveNote(data: { content: string; rating: 1 | 2 | 3 | 4 | 5 }) {
           v-else
           class="btn-primary flex items-center gap-2 !bg-matcha-500 hover:!bg-matcha-600"
           :disabled="!stepCompleted[3] && !showFinishModal"
+          data-onboarding="finish-btn"
           @click="showFinishModal = true"
         >
           <Home :size="18" />

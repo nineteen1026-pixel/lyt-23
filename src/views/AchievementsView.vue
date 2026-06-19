@@ -9,11 +9,21 @@ import ChallengeList from '@/components/challenges/ChallengeList.vue';
 import { useCookingStore } from '@/stores/cooking';
 import { useChallengesStore } from '@/stores/challenges';
 import { challenges } from '@/data/challenges';
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
+import { useOnboardingStore } from '@/stores/onboarding';
 
 const router = useRouter();
 const store = useCookingStore();
 const challengesStore = useChallengesStore();
+const onboardingStore = useOnboardingStore();
+
+onMounted(() => {
+  if (!onboardingStore.isCompleted) {
+    setTimeout(() => {
+      onboardingStore.startFlow('achievements');
+    }, 500);
+  }
+});
 
 const unlockedBadgeDetails = computed(() => {
   return challenges
@@ -66,12 +76,12 @@ function handleStartChallenge(challengeId: string) {
       </div>
     </header>
 
-    <section class="mb-10 animate-fade-slide" style="animation-delay: 0.05s">
+    <section class="mb-10 animate-fade-slide" style="animation-delay: 0.05s" data-onboarding="calendar">
       <h2 class="text-display text-xl text-brown-900 mb-4">📅 打卡日历</h2>
       <CheckInCalendar />
     </section>
 
-    <section class="mb-10 animate-fade-slide" style="animation-delay: 0.08s">
+    <section class="mb-10 animate-fade-slide" style="animation-delay: 0.08s" data-onboarding="badges">
       <div class="flex items-end justify-between mb-4">
         <div>
           <h2 class="text-display text-xl text-brown-900 flex items-center gap-2">
@@ -142,7 +152,7 @@ function handleStartChallenge(challengeId: string) {
       <UnlockProgress />
     </section>
 
-    <section class="mb-10 animate-fade-slide" style="animation-delay: 0.25s">
+    <section class="mb-10 animate-fade-slide" style="animation-delay: 0.25s" data-onboarding="decorations">
       <h2 class="text-display text-xl text-brown-900 mb-4">🏠 厨房摆件</h2>
       <DecorationGrid />
     </section>

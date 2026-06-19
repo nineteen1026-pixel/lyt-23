@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import { useOnboardingStore } from '@/stores/onboarding';
+import { useCookingStore } from '@/stores/cooking';
 import { ChevronLeft, ChevronRight, X, Sparkles } from 'lucide-vue-next';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 
 const store = useOnboardingStore();
+const cookingStore = useCookingStore();
 const router = useRouter();
+const route = useRoute();
 
 const highlightRect = ref({
   top: 0,
@@ -22,11 +25,20 @@ const tooltipPosition = ref({
 
 const showTooltip = ref(false);
 let pollTimer: ReturnType<typeof setInterval> | null = null;
+let mutationObserver: MutationObserver | null = null;
+let lastKnownSelector: string | null = null;
 
 function stopPolling() {
   if (pollTimer) {
     clearInterval(pollTimer);
     pollTimer = null;
+  }
+}
+
+function disconnectObserver() {
+  if (mutationObserver) {
+    mutationObserver.disconnect();
+    mutationObserver = null;
   }
 }
 
@@ -108,9 +120,35 @@ function updateHighlight() {
   });
 }
 
+function setupObserver(selector: string) {
+  disconnectObserver();
+  lastKnownSelector = selector;
+
+  if (!document.body) return;
+
+  mutationObserver = new MutationObserver(() => {
+    if (!store.isVisible || !store.currentStep) return;
+    const target = document.querySelector(selector);
+    if (target && !showTooltip.value) {
+      updateHighlight();
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else if (target && showTooltip.value) {
+      updateHighlight();
+    }
+  });
+
+  mutationObserver.observe(document.body, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['data-onboarding', 'class', 'style'],
+  });
+}
+
 function waitForElementAndHighlight(selector: string) {
   stopPolling();
   showTooltip.value = false;
+  setupObserver(selector);
 
   const check = () => {
     const target = document.querySelector(selector);
@@ -124,7 +162,6 @@ function waitForElementAndHighlight(selector: string) {
   check();
   if (!document.querySelector(selector)) {
     pollTimer = setInterval(check, 100);
-    setTimeout(() => stopPolling(), 3000);
   }
 }
 
@@ -176,6 +213,7 @@ watch(
     if (store.isVisible && store.currentStep) {
       showTooltip.value = false;
       stopPolling();
+      disconnectObserver();
       setTimeout(() => {
         const selector = store.currentStep?.targetSelector;
         if (selector) {
@@ -186,9 +224,18 @@ watch(
       }, 100);
     } else {
       stopPolling();
+      disconnectObserver();
     }
   },
   { immediate: true },
+);
+
+watch(
+  () => route.name,
+  () => {
+    stopPolling();
+    disconnectObserver();
+  },
 );
 
 onMounted(() => {
@@ -198,6 +245,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   stopPolling();
+  disconnectObserver();
   window.removeEventListener('scroll', handleScroll, true);
   window.removeEventListener('resize', handleResize);
 });

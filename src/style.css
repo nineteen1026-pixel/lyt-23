@@ -9,6 +9,12 @@
     --color-primary: #FF8C42;
     --color-secondary: #A7C957;
     --color-text: #6B4226;
+    --gradient-top-left: #FFF1E0;
+    --gradient-bottom-right: #FFE0C4;
+    --gradient-base: #FFE8D6;
+    --counter-bg: linear-gradient(180deg, #DEB887 0%, #D2B48C 50%, #C4A574 100%);
+    --counter-border: #B8956E;
+    --counter-accent: #8B7355;
   }
 
   * {
@@ -25,9 +31,9 @@
     font-family: "Noto Sans SC", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     color: var(--color-text);
     background:
-      radial-gradient(ellipse at top left, #FFF1E0 0%, transparent 50%),
-      radial-gradient(ellipse at bottom right, #FFE0C4 0%, transparent 50%),
-      #FFE8D6;
+      radial-gradient(ellipse at top left, var(--gradient-top-left) 0%, transparent 50%),
+      radial-gradient(ellipse at bottom right, var(--gradient-bottom-right) 0%, transparent 50%),
+      var(--gradient-base);
     background-attachment: fixed;
     min-height: 100vh;
   }

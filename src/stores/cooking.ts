@@ -1,6 +1,15 @@
 import { defineStore } from 'pinia';
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { checkNewUnlocks, type Apron, type Decoration } from '@/data/unlocks';
+import {
+  checkNewThemeUnlocks,
+  getBackgroundById,
+  getCounterById,
+  getDefaultBackground,
+  getDefaultCounter,
+  type KitchenBackground,
+  type CounterMaterial,
+} from '@/data/themes';
 
 export interface CookingRecord {
   dishId: string;
@@ -23,6 +32,8 @@ export interface Note {
 export interface UnlockResult {
   newDecorations: Decoration[];
   newAprons: Apron[];
+  newBackgrounds: KitchenBackground[];
+  newCounters: CounterMaterial[];
 }
 
 function todayStr(): string {
@@ -55,8 +66,20 @@ export const useCookingStore = defineStore(
     const unlockedAprons = ref<string[]>(['default']);
     const activeDecoration = ref<string | null>(null);
     const activeApron = ref<string>('default');
+    const unlockedBackgrounds = ref<string[]>(['warm-cream']);
+    const unlockedCounters = ref<string[]>(['wood-light']);
+    const activeBackground = ref<string>('warm-cream');
+    const activeCounter = ref<string>('wood-light');
 
     const isCheckedInToday = computed(() => lastCheckInDate.value === todayStr());
+
+    const activeBackgroundData = computed(() =>
+      getBackgroundById(activeBackground.value) ?? getDefaultBackground(),
+    );
+
+    const activeCounterData = computed(() =>
+      getCounterById(activeCounter.value) ?? getDefaultCounter(),
+    );
 
     function addCookingRecord(dishId: string, extra?: { durationSeconds?: number; shareText?: string }): void {
       cookingHistory.value.unshift({
@@ -126,7 +149,7 @@ export const useCookingStore = defineStore(
       const today = todayStr();
       const prevTotal = totalDays.value;
       if (lastCheckInDate.value === today) {
-        return { newDecorations: [], newAprons: [] };
+        return { newDecorations: [], newAprons: [], newBackgrounds: [], newCounters: [] };
       }
 
       if (lastCheckInDate.value && isYesterday(lastCheckInDate.value)) {
@@ -154,7 +177,19 @@ export const useCookingStore = defineStore(
         );
       }
 
-      return { newDecorations, newAprons };
+      const { newBackgrounds, newCounters } = checkNewThemeUnlocks(prevTotal, totalDays.value);
+      if (newBackgrounds.length > 0) {
+        unlockedBackgrounds.value = Array.from(
+          new Set([...unlockedBackgrounds.value, ...newBackgrounds.map((b) => b.id)]),
+        );
+      }
+      if (newCounters.length > 0) {
+        unlockedCounters.value = Array.from(
+          new Set([...unlockedCounters.value, ...newCounters.map((c) => c.id)]),
+        );
+      }
+
+      return { newDecorations, newAprons, newBackgrounds, newCounters };
     }
 
     function toggleDecoration(id: string): void {
@@ -167,6 +202,45 @@ export const useCookingStore = defineStore(
         activeApron.value = id;
       }
     }
+
+    function setActiveBackground(id: string): void {
+      if (unlockedBackgrounds.value.includes(id)) {
+        activeBackground.value = id;
+      }
+    }
+
+    function setActiveCounter(id: string): void {
+      if (unlockedCounters.value.includes(id)) {
+        activeCounter.value = id;
+      }
+    }
+
+    function applyThemeToCSSVariables(): void {
+      if (typeof document === 'undefined') return;
+      const bg = activeBackgroundData.value;
+      const counter = activeCounterData.value;
+      const root = document.documentElement;
+
+      root.style.setProperty('--color-bg', bg.colors.bg);
+      root.style.setProperty('--color-bg-soft', bg.colors.bgSoft);
+      root.style.setProperty('--color-primary', bg.colors.primary);
+      root.style.setProperty('--color-secondary', bg.colors.secondary);
+      root.style.setProperty('--color-text', bg.colors.text);
+      root.style.setProperty('--gradient-top-left', bg.gradients.topLeft);
+      root.style.setProperty('--gradient-bottom-right', bg.gradients.bottomRight);
+      root.style.setProperty('--gradient-base', bg.gradients.base);
+      root.style.setProperty('--counter-bg', counter.background);
+      root.style.setProperty('--counter-border', counter.borderColor);
+      root.style.setProperty('--counter-accent', counter.accentColor);
+    }
+
+    watch(
+      [activeBackground, activeCounter],
+      () => {
+        applyThemeToCSSVariables();
+      },
+      { immediate: true },
+    );
 
     function hasCheckedInOn(dateStr: string): boolean {
       return checkInDates.value.includes(dateStr);
@@ -184,6 +258,12 @@ export const useCookingStore = defineStore(
       unlockedAprons,
       activeDecoration,
       activeApron,
+      unlockedBackgrounds,
+      unlockedCounters,
+      activeBackground,
+      activeCounter,
+      activeBackgroundData,
+      activeCounterData,
       isCheckedInToday,
       addCookingRecord,
       addNote,
@@ -194,6 +274,9 @@ export const useCookingStore = defineStore(
       checkIn,
       toggleDecoration,
       setActiveApron,
+      setActiveBackground,
+      setActiveCounter,
+      applyThemeToCSSVariables,
       hasCheckedInOn,
     };
   },

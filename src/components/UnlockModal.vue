@@ -1,6 +1,6 @@
 <script setup lang="ts">
 interface UnlockItem {
-  type: 'decoration' | 'apron';
+  type: 'decoration' | 'apron' | 'background' | 'counter';
   name: string;
   emoji?: string;
   color?: string;
@@ -126,6 +126,20 @@ function getApronStyle(item: UnlockItem) {
                 {{ item.emoji }}
               </div>
               <div
+                v-else-if="item.type === 'background'"
+                class="w-16 h-16 rounded-2xl flex items-center justify-center text-4xl shadow-inner ring-2 ring-white/80"
+                :style="{ background: `linear-gradient(135deg, ${item.color || '#FFE8D6'}, ${item.color || '#FFF8F0'}88)` }"
+              >
+                {{ item.emoji }}
+              </div>
+              <div
+                v-else-if="item.type === 'counter'"
+                class="w-16 h-16 rounded-2xl flex items-center justify-center text-4xl shadow-inner ring-2 ring-white/80"
+                :style="{ background: item.color || 'linear-gradient(180deg, #DEB887 0%, #D2B48C 100%)' }"
+              >
+                {{ item.emoji }}
+              </div>
+              <div
                 v-else
                 class="relative w-16 h-16 rounded-full overflow-hidden flex items-center justify-center shadow-inner border-2 border-white/80"
               >
@@ -167,11 +181,14 @@ function getApronStyle(item: UnlockItem) {
               <div class="text-center">
                 <span
                   class="inline-block text-xs px-2 py-0.5 rounded-full mb-1"
-                  :class="item.type === 'decoration'
-                    ? 'bg-matcha-400/30 text-matcha-600'
-                    : 'bg-apricot-400/30 text-apricot-600'"
+                  :class="{
+                    'bg-matcha-400/30 text-matcha-600': item.type === 'decoration',
+                    'bg-apricot-400/30 text-apricot-600': item.type === 'apron',
+                    'bg-blue-400/30 text-blue-600': item.type === 'background',
+                    'bg-purple-400/30 text-purple-600': item.type === 'counter',
+                  }"
                 >
-                  {{ item.type === 'decoration' ? '装饰' : '围裙' }}
+                  {{ item.type === 'decoration' ? '装饰' : item.type === 'apron' ? '围裙' : item.type === 'background' ? '背景' : '台面' }}
                 </span>
                 <h4 class="text-display text-brown-900 text-sm leading-tight">
                   {{ item.name }}

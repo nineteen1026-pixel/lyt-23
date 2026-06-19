@@ -2,6 +2,7 @@
 import { useRouter } from 'vue-router';
 import TopStatusBar from '@/components/TopStatusBar.vue';
 import DishCard from '@/components/DishCard.vue';
+import KitchenScene from '@/components/KitchenScene.vue';
 import { dishes, type Dish } from '@/data/dishes';
 import { useCookingStore } from '@/stores/cooking';
 import { useProfileStore, ALLERGENS } from '@/stores/profile';
@@ -243,6 +244,22 @@ function selectDish(id: string) {
         <span class="text-xl">{{ activeDecoration.emoji }}</span>
         <span class="text-xs">{{ activeDecoration.name }} 正在陪着你 🌿</span>
       </div>
+    </section>
+
+    <section class="mb-10 animate-fade-slide" style="animation-delay: 0.06s">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-display text-lg text-brown-900 flex items-center gap-2">
+          🏡 我的小厨房
+        </h2>
+        <button
+          class="flex items-center gap-1 text-sm text-apricot-600 hover:text-apricot-700 transition-colors"
+          @click="router.push('/achievements')"
+        >
+          <span>装修</span>
+          <ChevronRight :size="16" />
+        </button>
+      </div>
+      <KitchenScene />
     </section>
 
     <Transition name="fade">

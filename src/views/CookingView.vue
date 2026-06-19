@@ -25,7 +25,7 @@ import ChallengeRewardModal from '@/components/challenges/ChallengeRewardModal.v
 import { useOnboardingStore } from '@/stores/onboarding';
 
 interface UnlockItem {
-  type: 'decoration' | 'apron';
+  type: 'decoration' | 'apron' | 'background' | 'counter';
   name: string;
   emoji?: string;
   color?: string;
@@ -176,6 +176,16 @@ function handleCheckIn() {
   (result.newAprons as Apron[]).forEach((a) => {
     items.push({ type: 'apron', name: a.name, color: a.color, stripe: a.stripe });
   });
+  if (result.newBackgrounds) {
+    result.newBackgrounds.forEach((b) => {
+      items.push({ type: 'background', name: b.name, emoji: b.emoji });
+    });
+  }
+  if (result.newCounters) {
+    result.newCounters.forEach((c) => {
+      items.push({ type: 'counter', name: c.name, emoji: c.emoji });
+    });
+  }
 
   showFinishModal.value = false;
   if (items.length > 0) {

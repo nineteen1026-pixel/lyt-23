@@ -5,6 +5,7 @@ import CheckInCalendar from '@/components/achievements/CheckInCalendar.vue';
 import UnlockProgress from '@/components/achievements/UnlockProgress.vue';
 import DecorationGrid from '@/components/achievements/DecorationGrid.vue';
 import ApronSelector from '@/components/achievements/ApronSelector.vue';
+import ThemeSelector from '@/components/achievements/ThemeSelector.vue';
 import ChallengeList from '@/components/challenges/ChallengeList.vue';
 import { useCookingStore } from '@/stores/cooking';
 import { useChallengesStore } from '@/stores/challenges';
@@ -155,6 +156,11 @@ function handleStartChallenge(challengeId: string) {
     <section class="mb-10 animate-fade-slide" style="animation-delay: 0.25s" data-onboarding="decorations">
       <h2 class="text-display text-xl text-brown-900 mb-4">🏠 厨房摆件</h2>
       <DecorationGrid />
+    </section>
+
+    <section class="mb-10 animate-fade-slide" style="animation-delay: 0.28s">
+      <h2 class="text-display text-xl text-brown-900 mb-4">🎨 主题装修</h2>
+      <ThemeSelector />
     </section>
 
     <section class="mb-10 animate-fade-slide" style="animation-delay: 0.3s">

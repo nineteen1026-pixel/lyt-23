@@ -9,9 +9,7 @@ import { unlocks } from '@/data/unlocks';
 import { computed, ref, onMounted } from 'vue';
 import { AlertTriangle, Sparkles, BookOpen, ChevronRight, Star, Target, Trophy } from 'lucide-vue-next';
 import { useChallengesStore } from '@/stores/challenges';
-import type { ChallengeBadge } from '@/data/challenges';
 import ChallengeProgress from '@/components/challenges/ChallengeProgress.vue';
-import ChallengeRewardModal from '@/components/challenges/ChallengeRewardModal.vue';
 import ChallengeList from '@/components/challenges/ChallengeList.vue';
 
 const router = useRouter();
@@ -20,8 +18,6 @@ const profileStore = useProfileStore();
 const challengesStore = useChallengesStore();
 
 const showChallengeList = ref(false);
-const showChallengeReward = ref(false);
-const pendingChallengeBadges = ref<ChallengeBadge[]>([]);
 
 onMounted(() => {
   challengesStore.resetExpiredChallenges();
@@ -29,11 +25,6 @@ onMounted(() => {
 
 function handleStartChallenge(challengeId: string) {
   challengesStore.startChallenge(challengeId);
-}
-
-function handleCloseChallengeReward() {
-  showChallengeReward.value = false;
-  pendingChallengeBadges.value = [];
 }
 
 const activeDecoration = computed(() =>
@@ -422,13 +413,5 @@ function selectDish(id: string) {
         </div>
       </div>
     </div>
-  </Transition>
-
-  <Transition name="fade">
-    <ChallengeRewardModal
-      v-if="showChallengeReward && pendingChallengeBadges.length > 0"
-      :badges="pendingChallengeBadges"
-      @close="handleCloseChallengeReward"
-    />
   </Transition>
 </template>

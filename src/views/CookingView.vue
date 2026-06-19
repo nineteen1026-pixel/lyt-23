@@ -4,7 +4,7 @@ import { useRouter, useRoute } from 'vue-router';
 import { ArrowLeft, ChevronLeft, ChevronRight, Home } from 'lucide-vue-next';
 import { getDishById } from '@/data/dishes';
 import { useCookingStore, type UnlockResult } from '@/stores/cooking';
-import { useChallengesStore, type ChallengeRewardResult } from '@/stores/challenges';
+import { useChallengesStore } from '@/stores/challenges';
 import { unlocks, type Decoration, type Apron } from '@/data/unlocks';
 import type { ChallengeBadge } from '@/data/challenges';
 import StepProgress from '@/components/cooking/StepProgress.vue';
@@ -41,6 +41,7 @@ const pendingUnlockItems = ref<UnlockItem[]>([]);
 const showNoteEditor = ref(false);
 const showChallengeReward = ref(false);
 const pendingChallengeBadges = ref<ChallengeBadge[]>([]);
+const afterRewardAction = ref<(() => void) | null>(null);
 
 const activeApronData = computed(() =>
   unlocks.aprons.find((a) => a.id === store.activeApron) ?? unlocks.aprons[0],
@@ -83,20 +84,12 @@ function onStepComplete(stepIndex: number) {
     setTimeout(() => {
       if (dish.value) {
         store.addCookingRecord(dish.value.id);
-        if (store.isCheckedInToday) {
-          const challengeResult = challengesStore.recordCooking(dish.value.id);
-          if (challengeResult.newBadges.length > 0) {
-            pendingChallengeBadges.value = challengeResult.newBadges;
-          }
+        const challengeResult = challengesStore.recordCooking(dish.value.id);
+        if (challengeResult.newBadges.length > 0) {
+          pendingChallengeBadges.value = challengeResult.newBadges;
         }
       }
       showFinishModal.value = true;
-      if (pendingChallengeBadges.value.length > 0) {
-        setTimeout(() => {
-          showFinishModal.value = false;
-          showChallengeReward.value = true;
-        }, 500);
-      }
     }, 1000);
   }
 }
@@ -126,19 +119,13 @@ function handleCheckIn() {
     items.push({ type: 'apron', name: a.name, color: a.color, stripe: a.stripe });
   });
 
-  let challengeResult: ChallengeRewardResult | null = null;
-  if (dish.value) {
-    challengeResult = challengesStore.recordCooking(dish.value.id);
-  }
-
   showFinishModal.value = false;
   if (items.length > 0) {
     pendingUnlockItems.value = items;
     setTimeout(() => {
       showUnlockModal.value = true;
     }, 300);
-  } else if (challengeResult && challengeResult.newBadges.length > 0) {
-    pendingChallengeBadges.value = challengeResult.newBadges;
+  } else if (pendingChallengeBadges.value.length > 0) {
     setTimeout(() => {
       showChallengeReward.value = true;
     }, 300);
@@ -148,22 +135,39 @@ function handleCheckIn() {
 function handleBackHome() {
   showFinishModal.value = false;
   showUnlockModal.value = false;
+  if (pendingChallengeBadges.value.length > 0 && !showChallengeReward.value) {
+    afterRewardAction.value = () => router.push('/');
+    showChallengeReward.value = true;
+    return;
+  }
   showChallengeReward.value = false;
   pendingChallengeBadges.value = [];
+  afterRewardAction.value = null;
   router.push('/');
 }
 
 function handleCookMore() {
   showFinishModal.value = false;
   showUnlockModal.value = false;
+  if (pendingChallengeBadges.value.length > 0 && !showChallengeReward.value) {
+    afterRewardAction.value = () => router.push('/');
+    showChallengeReward.value = true;
+    return;
+  }
   showChallengeReward.value = false;
   pendingChallengeBadges.value = [];
+  afterRewardAction.value = null;
   router.push('/');
 }
 
 function handleCloseChallengeReward() {
   showChallengeReward.value = false;
+  const action = afterRewardAction.value;
   pendingChallengeBadges.value = [];
+  afterRewardAction.value = null;
+  if (action) {
+    action();
+  }
 }
 
 function handleWriteNote() {

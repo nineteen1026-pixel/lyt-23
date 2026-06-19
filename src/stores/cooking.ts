@@ -5,6 +5,8 @@ import { checkNewUnlocks, type Apron, type Decoration } from '@/data/unlocks';
 export interface CookingRecord {
   dishId: string;
   completedAt: string;
+  durationSeconds?: number;
+  shareText?: string;
 }
 
 export interface Note {
@@ -56,10 +58,11 @@ export const useCookingStore = defineStore(
 
     const isCheckedInToday = computed(() => lastCheckInDate.value === todayStr());
 
-    function addCookingRecord(dishId: string): void {
+    function addCookingRecord(dishId: string, extra?: { durationSeconds?: number; shareText?: string }): void {
       cookingHistory.value.unshift({
         dishId,
         completedAt: new Date().toISOString(),
+        ...extra,
       });
       if (cookingHistory.value.length > 500) {
         cookingHistory.value = cookingHistory.value.slice(0, 500);

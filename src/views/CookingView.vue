@@ -66,6 +66,9 @@ const showNoteEditor = ref(false);
 const showChallengeReward = ref(false);
 const pendingChallengeBadges = ref<ChallengeBadge[]>([]);
 const afterRewardAction = ref<(() => void) | null>(null);
+const cookingStartTime = ref<number | null>(null);
+const finishDuration = ref(0);
+const finishShareText = ref('');
 
 const activeApronData = computed(() =>
   unlocks.aprons.find((a) => a.id === store.activeApron) ?? unlocks.aprons[0],
@@ -99,6 +102,7 @@ watch(
 );
 
 onMounted(() => {
+  cookingStartTime.value = Date.now();
   if (!onboardingStore.isCompleted && dish.value && isDishAvailable.value && !isLockedByThreshold.value) {
     setTimeout(() => {
       onboardingStore.startFlow('cooking');
@@ -115,7 +119,16 @@ function onStepComplete(stepIndex: number) {
   } else {
     setTimeout(() => {
       if (dish.value) {
-        store.addCookingRecord(dish.value.id);
+        const durationSec = cookingStartTime.value
+          ? Math.round((Date.now() - cookingStartTime.value) / 1000)
+          : 0;
+        finishDuration.value = durationSec;
+        const shareText = `${dish.value.emoji} 今天做了一道「${dish.value.name}」！用时 ${formatCookingDuration(durationSec)}，快来试试吧～`;
+        finishShareText.value = shareText;
+        store.addCookingRecord(dish.value.id, {
+          durationSeconds: durationSec,
+          shareText,
+        });
         const challengeResult = challengesStore.recordCooking(dish.value.id);
         if (challengeResult.newBadges.length > 0) {
           pendingChallengeBadges.value = challengeResult.newBadges;
@@ -132,6 +145,13 @@ function goPrev() {
   } else {
     router.back();
   }
+}
+
+function formatCookingDuration(seconds: number): string {
+  if (seconds < 60) return `${seconds} 秒`;
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return s > 0 ? `${m} 分 ${s} 秒` : `${m} 分钟`;
 }
 
 function goNext() {
@@ -430,6 +450,8 @@ function handleSaveNote(data: { content: string; rating: 1 | 2 | 3 | 4 | 5 }) {
           :dish-emoji="dish.emoji"
           :dish-name="dish.name"
           :is-checked-in-today="store.isCheckedInToday"
+          :duration-seconds="finishDuration"
+          :share-text="finishShareText"
           @check-in="handleCheckIn"
           @back-home="handleBackHome"
           @cook-more="handleCookMore"

@@ -1,8 +1,12 @@
 <script setup lang="ts">
-defineProps<{
+import { ref } from 'vue';
+
+const props = defineProps<{
   dishEmoji: string;
   dishName: string;
   isCheckedInToday: boolean;
+  durationSeconds?: number;
+  shareText?: string;
 }>();
 
 const emit = defineEmits<{
@@ -11,6 +15,35 @@ const emit = defineEmits<{
   (e: 'cookMore'): void;
   (e: 'writeNote'): void;
 }>();
+
+const copied = ref(false);
+
+function formatDuration(seconds: number): string {
+  if (seconds < 60) return `${seconds} 秒`;
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return s > 0 ? `${m} 分 ${s} 秒` : `${m} 分钟`;
+}
+
+async function handleCopy() {
+  const text = props.shareText ?? `${props.dishEmoji} 今天做了一道「${props.dishName}」！`;
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  }
+  copied.value = true;
+  setTimeout(() => {
+    copied.value = false;
+  }, 2000);
+}
 </script>
 
 <template>
@@ -78,9 +111,17 @@ const emit = defineEmits<{
             <h2 class="text-display text-3xl text-brown-900 mb-2 text-shadow-soft">
               {{ dishName }}
             </h2>
-            <p class="text-display text-xl text-apricot-600 mb-6">
+            <p class="text-display text-xl text-apricot-600 mb-4">
               完成啦！🍽️
             </p>
+
+            <div
+              v-if="durationSeconds != null && durationSeconds > 0"
+              class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-cream-100 border border-cream-200 mb-4"
+            >
+              <span class="text-sm">⏱️</span>
+              <span class="text-sm font-medium text-brown-800">本次用时 {{ formatDuration(durationSeconds) }}</span>
+            </div>
 
             <div class="mb-6">
               <div
@@ -103,7 +144,17 @@ const emit = defineEmits<{
           </div>
         </div>
 
-        <div class="px-8 pb-6">
+        <div class="px-8 pb-3">
+          <button
+            class="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-50 to-cream-50 border-2 border-amber-300 text-amber-700 font-medium text-sm hover:shadow-soft transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+            @click="handleCopy"
+          >
+            <span>{{ copied ? '✅' : '🔗' }}</span>
+            <span>{{ copied ? '已复制分享文案' : '复制分享文案' }}</span>
+          </button>
+        </div>
+
+        <div class="px-8 pb-3">
           <button
             class="w-full py-3 rounded-2xl bg-gradient-to-r from-matcha-50 to-cream-50 border-2 border-matcha-300 text-matcha-700 font-medium text-sm hover:shadow-soft transition-all active:scale-[0.98] flex items-center justify-center gap-2"
             @click="emit('writeNote')"

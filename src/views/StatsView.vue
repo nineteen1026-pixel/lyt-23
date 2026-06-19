@@ -3,7 +3,7 @@ import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { ArrowLeft, BarChart3, TrendingUp, ChefHat, UtensilsCrossed, Flame, CalendarDays } from 'lucide-vue-next';
 import { useCookingStore } from '@/stores/cooking';
-import { dishes, getDishById } from '@/data/dishes';
+import { getDishById } from '@/data/dishes';
 import MonthlyBarChart from '@/components/stats/MonthlyBarChart.vue';
 import DishPieChart from '@/components/stats/DishPieChart.vue';
 import type { MonthlyData } from '@/components/stats/MonthlyBarChart.vue';
@@ -70,16 +70,18 @@ const favoriteDish = computed(() => {
 const currentMonthCount = computed(() => {
   const now = new Date();
   const key = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  return monthlyData.value.find((m) => {
-    const monthIdx = MONTH_SHORT.findIndex((s) => m.label === s);
-    return monthIdx === now.getMonth();
-  })?.count ?? 0;
+  const counts: Map<string, number> = new Map();
+  store.cookingHistory.forEach((record) => {
+    const date = new Date(record.completedAt);
+    const recordKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    counts.set(recordKey, (counts.get(recordKey) ?? 0) + 1);
+  });
+  return counts.get(key) ?? 0;
 });
 
 const avgPerMonth = computed(() => {
   if (monthlyData.value.length === 0) return 0;
-  const activeMonths = monthlyData.value.filter((m) => m.count > 0).length || 1;
-  return Math.round(totalCount.value / activeMonths * 10) / 10;
+  return Math.round((totalCount.value / 12) * 10) / 10;
 });
 
 const uniqueDishes = computed(() => dishDistribution.value.length);
@@ -194,7 +196,7 @@ const uniqueDishes = computed(() => dishDistribution.value.length);
             <ul class="text-sm text-brown-800/70 space-y-1.5 leading-relaxed">
               <li>• 每月烹饪频次展示近 12 个月的烹饪次数趋势</li>
               <li>• 最爱菜品分布基于你所有已完成的烹饪记录</li>
-              <li>• 坚持打卡，数据会越来越丰富哦～</li>
+              <li>• 只有完成做菜才计入统计，打卡不影响数据</li>
               <li>• 所有数据保存在本地，清缓存后需重新积累</li>
             </ul>
           </div>

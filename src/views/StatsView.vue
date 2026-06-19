@@ -9,12 +9,16 @@ import DishPieChart from '@/components/stats/DishPieChart.vue';
 import type { MonthlyData } from '@/components/stats/MonthlyBarChart.vue';
 import type { DishSlice } from '@/components/stats/DishPieChart.vue';
 
+interface MonthlyDataWithKey extends MonthlyData {
+  key: string;
+}
+
 const router = useRouter();
 const store = useCookingStore();
 
 const MONTH_SHORT = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
 
-const monthlyData = computed<MonthlyData[]>(() => {
+const monthlyDataWithKey = computed<MonthlyDataWithKey[]>(() => {
   const now = new Date();
   const counts: Map<string, number> = new Map();
 
@@ -34,9 +38,13 @@ const monthlyData = computed<MonthlyData[]>(() => {
 
   return Array.from(counts.entries()).map(([key, count]) => {
     const monthIdx = parseInt(key.split('-')[1], 10) - 1;
-    return { label: MONTH_SHORT[monthIdx], count };
+    return { key, label: MONTH_SHORT[monthIdx], count };
   });
 });
+
+const monthlyData = computed<MonthlyData[]>(() =>
+  monthlyDataWithKey.value.map(({ key, ...rest }) => rest),
+);
 
 const dishDistribution = computed<DishSlice[]>(() => {
   const counts: Map<string, number> = new Map();
@@ -70,18 +78,13 @@ const favoriteDish = computed(() => {
 const currentMonthCount = computed(() => {
   const now = new Date();
   const key = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  const counts: Map<string, number> = new Map();
-  store.cookingHistory.forEach((record) => {
-    const date = new Date(record.completedAt);
-    const recordKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-    counts.set(recordKey, (counts.get(recordKey) ?? 0) + 1);
-  });
-  return counts.get(key) ?? 0;
+  return monthlyDataWithKey.value.find((m) => m.key === key)?.count ?? 0;
 });
 
 const avgPerMonth = computed(() => {
-  if (monthlyData.value.length === 0) return 0;
-  return Math.round((totalCount.value / 12) * 10) / 10;
+  if (monthlyDataWithKey.value.length === 0) return 0;
+  const sum = monthlyDataWithKey.value.reduce((acc, m) => acc + m.count, 0);
+  return Math.round((sum / 12) * 10) / 10;
 });
 
 const uniqueDishes = computed(() => dishDistribution.value.length);

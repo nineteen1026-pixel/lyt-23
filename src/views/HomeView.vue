@@ -524,6 +524,7 @@ function selectDish(id: string) {
     <section
       class="mb-6 animate-fade-slide"
       style="animation-delay: 0.12s"
+      data-onboarding="dish-card"
     >
       <div class="flex items-end justify-between mb-5">
         <div>

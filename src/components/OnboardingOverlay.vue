@@ -21,6 +21,14 @@ const tooltipPosition = ref({
 });
 
 const showTooltip = ref(false);
+let pollTimer: ReturnType<typeof setInterval> | null = null;
+
+function stopPolling() {
+  if (pollTimer) {
+    clearInterval(pollTimer);
+    pollTimer = null;
+  }
+}
 
 function updateHighlight() {
   const step = store.currentStep;
@@ -41,8 +49,8 @@ function updateHighlight() {
   const padding = 8;
 
   highlightRect.value = {
-    top: rect.top - padding + window.scrollY,
-    left: rect.left - padding + window.scrollX,
+    top: rect.top - padding,
+    left: rect.left - padding,
     width: rect.width + padding * 2,
     height: rect.height + padding * 2,
   };
@@ -76,18 +84,17 @@ function updateHighlight() {
 
   const viewportWidth = window.innerWidth;
   const viewportHeight = window.innerHeight;
-  const scrollY = window.scrollY;
 
   if (left < 16) left = 16;
   if (left + tooltipWidth > viewportWidth - 16) {
     left = viewportWidth - tooltipWidth - 16;
   }
 
-  if (top < scrollY + 16) {
+  if (top < 16) {
     top = highlightRect.value.top + highlightRect.value.height + gap;
     placement === 'top' ? (tooltipPosition.value.placement = 'bottom') : null;
   }
-  if (top + tooltipHeight > scrollY + viewportHeight - 16) {
+  if (top + tooltipHeight > viewportHeight - 16) {
     top = highlightRect.value.top - tooltipHeight - gap;
     placement === 'bottom' ? (tooltipPosition.value.placement = 'top') : null;
   }
@@ -99,6 +106,26 @@ function updateHighlight() {
   nextTick(() => {
     showTooltip.value = true;
   });
+}
+
+function waitForElementAndHighlight(selector: string) {
+  stopPolling();
+  showTooltip.value = false;
+
+  const check = () => {
+    const target = document.querySelector(selector);
+    if (target) {
+      stopPolling();
+      updateHighlight();
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
+
+  check();
+  if (!document.querySelector(selector)) {
+    pollTimer = setInterval(check, 100);
+    setTimeout(() => stopPolling(), 3000);
+  }
 }
 
 function handleNext() {
@@ -148,15 +175,17 @@ watch(
   () => {
     if (store.isVisible && store.currentStep) {
       showTooltip.value = false;
+      stopPolling();
       setTimeout(() => {
-        updateHighlight();
-        const target = store.currentStep?.targetSelector
-          ? document.querySelector(store.currentStep.targetSelector)
-          : null;
-        if (target) {
-          target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const selector = store.currentStep?.targetSelector;
+        if (selector) {
+          waitForElementAndHighlight(selector);
+        } else {
+          updateHighlight();
         }
       }, 100);
+    } else {
+      stopPolling();
     }
   },
   { immediate: true },
@@ -168,6 +197,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  stopPolling();
   window.removeEventListener('scroll', handleScroll, true);
   window.removeEventListener('resize', handleResize);
 });
@@ -185,7 +215,7 @@ const hasTarget = computed(() => {
         class="fixed inset-0 z-[100] pointer-events-none"
       >
         <svg
-          class="absolute inset-0 w-full h-full pointer-events-none"
+          class="fixed inset-0 w-full h-full pointer-events-none"
           style="pointer-events: none;"
         >
           <defs>
@@ -214,7 +244,7 @@ const hasTarget = computed(() => {
 
         <div
           v-if="hasTarget"
-          class="absolute rounded-xl ring-2 ring-apricot-400 ring-opacity-80 animate-pulse pointer-events-none"
+          class="fixed rounded-xl ring-2 ring-apricot-400 ring-opacity-80 animate-pulse pointer-events-none"
           :style="{
             top: `${highlightRect.top}px`,
             left: `${highlightRect.left}px`,
@@ -227,7 +257,7 @@ const hasTarget = computed(() => {
         <Transition name="pop">
           <div
             v-if="showTooltip || !hasTarget"
-            class="absolute pointer-events-auto"
+            class="fixed pointer-events-auto"
             :style="{
               top: hasTarget ? `${tooltipPosition.top}px` : '50%',
               left: hasTarget ? `${tooltipPosition.left}px` : '50%',
@@ -313,7 +343,7 @@ const hasTarget = computed(() => {
 
         <button
           v-if="!hasTarget"
-          class="absolute top-4 right-4 w-9 h-9 rounded-full bg-cream-100/80 hover:bg-cream-200 flex items-center justify-center text-brown-800/70 transition-all pointer-events-auto"
+          class="fixed top-4 right-4 w-9 h-9 rounded-full bg-cream-100/80 hover:bg-cream-200 flex items-center justify-center text-brown-800/70 transition-all pointer-events-auto"
           @click="handleSkip"
         >
           <X :size="18" />

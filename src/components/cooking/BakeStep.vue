@@ -40,7 +40,7 @@ const linkedTimer = computed(() => {
 });
 
 const isLinkedBaking = computed(() =>
-  linkedTimer.value !== null && (linkedTimer.value.status === 'running' || linkedTimer.value.status === 'paused'),
+  linkedTimer.value !== null && linkedTimer.value.status !== 'idle',
 );
 
 const displayTime = computed(() => {
@@ -135,6 +135,10 @@ function startCloseDoor() {
 function startBaking() {
   stage.value = 'baking';
 
+  if (linkedTimer.value && linkedTimer.value.status === 'idle') {
+    timerStore.startTimer(linkedTimer.value.id);
+  }
+
   if (isLinkedBaking.value) {
     return;
   }
@@ -166,16 +170,22 @@ function finishBaking() {
   }, 400);
 }
 
+function forceFinishFromTimer() {
+  if (bakeInterval) {
+    clearInterval(bakeInterval);
+    bakeInterval = null;
+  }
+  dishInside.value = true;
+  doorOpen.value = false;
+  finishBaking();
+}
+
 watch(
   () => linkedTimer.value?.status,
   (timerStatus) => {
     if (!linkedTimer.value) return;
-    if (timerStatus === 'done' && stage.value === 'baking') {
-      if (bakeInterval) {
-        clearInterval(bakeInterval);
-        bakeInterval = null;
-      }
-      finishBaking();
+    if (timerStatus === 'done' && stage.value !== 'done') {
+      forceFinishFromTimer();
     }
   },
 );

@@ -84,14 +84,13 @@ const hasLinkedBakeTimer = computed(() => {
 
 function linkBakeTimerToGlobal(): void {
   if (!dish.value) return;
-  const timer = timerStore.addDishBakeTimer(
+  timerStore.addDishBakeTimer(
     dish.value.id,
     dish.value.name,
     dish.value.emoji,
     dish.value.color,
     dish.value.time,
   );
-  timerStore.startTimer(timer.id);
 }
 
 const activeApronData = computed(() =>

@@ -251,33 +251,53 @@ const sortedDishes = computed<DishWithMeta[]>(() => {
     return list;
   }
 
-  if (sortMode === 'time-asc') {
-    list.sort((a, b) => a.dish.time - b.dish.time);
-  } else if (sortMode === 'time-desc') {
-    list.sort((a, b) => b.dish.time - a.dish.time);
-  } else if (sortMode === 'difficulty-asc') {
-    list.sort((a, b) => a.dish.difficulty - b.dish.difficulty);
-  } else if (sortMode === 'difficulty-desc') {
-    list.sort((a, b) => b.dish.difficulty - a.dish.difficulty);
-  } else {
-    list.sort((a, b) => {
-      const aSeasonal = currentSeasonalDishIds.value.includes(a.dish.id) ? 0 : 1;
-      const bSeasonal = currentSeasonalDishIds.value.includes(b.dish.id) ? 0 : 1;
-      if (aSeasonal !== bSeasonal) return aSeasonal - bSeasonal;
-      if (a.hasAllergen !== b.hasAllergen) {
-        return a.hasAllergen ? 1 : -1;
-      }
-      return b.tasteScore - a.tasteScore;
-    });
+  const pinnedList: DishWithMeta[] = [];
+  const nonPinnedList: DishWithMeta[] = [];
+  const pinnedIndexMap = new Map<string, number>();
+  favoritesStore.pinnedIds.forEach((id, idx) => pinnedIndexMap.set(id, idx));
+
+  list.forEach((item) => {
+    if (favoritesStore.isPinned(item.dish.id)) {
+      pinnedList.push(item);
+    } else {
+      nonPinnedList.push(item);
+    }
+  });
+
+  function applySort(arr: DishWithMeta[]): DishWithMeta[] {
+    const sorted = [...arr];
+    if (sortMode === 'time-asc') {
+      sorted.sort((a, b) => a.dish.time - b.dish.time);
+    } else if (sortMode === 'time-desc') {
+      sorted.sort((a, b) => b.dish.time - a.dish.time);
+    } else if (sortMode === 'difficulty-asc') {
+      sorted.sort((a, b) => a.dish.difficulty - b.dish.difficulty);
+    } else if (sortMode === 'difficulty-desc') {
+      sorted.sort((a, b) => b.dish.difficulty - a.dish.difficulty);
+    } else {
+      sorted.sort((a, b) => {
+        const aSeasonal = currentSeasonalDishIds.value.includes(a.dish.id) ? 0 : 1;
+        const bSeasonal = currentSeasonalDishIds.value.includes(b.dish.id) ? 0 : 1;
+        if (aSeasonal !== bSeasonal) return aSeasonal - bSeasonal;
+        if (a.hasAllergen !== b.hasAllergen) {
+          return a.hasAllergen ? 1 : -1;
+        }
+        return b.tasteScore - a.tasteScore;
+      });
+    }
+    return sorted;
   }
 
-  const pinnedFirst = [...list];
-  pinnedFirst.sort((a, b) => {
-    const aPinned = favoritesStore.isPinned(a.dish.id) ? 0 : 1;
-    const bPinned = favoritesStore.isPinned(b.dish.id) ? 0 : 1;
-    return aPinned - bPinned;
+  const sortedPinned = applySort(pinnedList);
+  const sortedNonPinned = applySort(nonPinnedList);
+
+  sortedPinned.sort((a, b) => {
+    const aIdx = pinnedIndexMap.get(a.dish.id) ?? 0;
+    const bIdx = pinnedIndexMap.get(b.dish.id) ?? 0;
+    return aIdx - bIdx;
   });
-  return pinnedFirst;
+
+  return [...sortedPinned, ...sortedNonPinned];
 });
 
 const pinnedDishes = computed<DishWithMeta[]>(() => {
@@ -712,7 +732,7 @@ function selectDish(id: string) {
           <p class="text-sm text-brown-800/60 mt-1">
             <template v-if="currentFilter === 'favorites'">
               共 {{ sortedDishes.length }} 道收藏菜品
-              <template v-if="isCustomSort">· 拖动调整顺序</template>
+              <template v-if="isCustomSort">· 点击箭头调整顺序</template>
             </template>
             <template v-else-if="currentFilter === 'non-favorites'">
               共 {{ sortedDishes.length }} 道未收藏菜品

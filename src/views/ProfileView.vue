@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import { ArrowLeft, User, AlertTriangle, Sparkles, RotateCcw } from 'lucide-vue-next';
+import { ArrowLeft, User, AlertTriangle, Sparkles, RotateCcw, Volume2 } from 'lucide-vue-next';
 import {
   useProfileStore,
   ALLERGENS,
@@ -13,9 +13,36 @@ import {
   type SweetLevel,
   type OilLevel,
 } from '@/stores/profile';
+import {
+  useSettingsStore,
+  SPEECH_RATE_OPTIONS,
+  type SpeechRate,
+} from '@/stores/settings';
+import { useSpeech } from '@/composables/useSpeech';
 
 const router = useRouter();
 const profileStore = useProfileStore();
+const settingsStore = useSettingsStore();
+const { speak, isSupported } = useSpeech();
+
+function testSpeech() {
+  speak('你好，欢迎使用语音引导功能！');
+}
+
+function handleSpeechRateChange(rate: SpeechRate) {
+  settingsStore.setSpeechRate(rate);
+  if (settingsStore.speechEnabled) {
+    const option = SPEECH_RATE_OPTIONS.find((o) => o.value === rate);
+    if (option) {
+      speak(`语速已调整为${option.label}`);
+    }
+  }
+}
+
+function handleReset() {
+  profileStore.resetProfile();
+  settingsStore.resetSettings();
+}
 </script>
 
 <template>
@@ -41,7 +68,7 @@ const profileStore = useProfileStore();
         </div>
         <button
           class="flex items-center gap-2 card-soft px-4 py-2.5 hover:shadow-soft transition-all active:scale-95 text-brown-800/70"
-          @click="profileStore.resetProfile()"
+          @click="handleReset"
         >
           <RotateCcw :size="16" />
           <span class="text-sm">重置</span>
@@ -211,6 +238,100 @@ const profileStore = useProfileStore();
     </section>
 
     <section class="mb-10 animate-fade-slide" style="animation-delay: 0.15s">
+      <div class="flex items-center gap-2 mb-4">
+        <Volume2 class="text-blue-500" :size="22" />
+        <h2 class="text-display text-xl text-brown-900">语音引导</h2>
+        <span class="text-xs text-brown-800/60 ml-1">（烹饪时语音播报步骤提示）</span>
+      </div>
+
+      <div v-if="!isSupported" class="card-soft p-5 bg-amber-50 border-amber-200">
+        <div class="flex items-center gap-3">
+          <span class="text-2xl">⚠️</span>
+          <div>
+            <p class="text-sm font-medium text-brown-900">当前浏览器不支持语音功能</p>
+            <p class="text-xs text-brown-800/60 mt-1">
+              语音引导功能需要浏览器支持 Web Speech API，建议使用最新版 Chrome、Edge 或 Safari 浏览器。
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div v-else class="card-soft p-5 space-y-6">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div
+              class="w-12 h-12 rounded-2xl flex items-center justify-center"
+              :class="settingsStore.speechEnabled ? 'bg-blue-100' : 'bg-cream-200'"
+            >
+              <Volume2
+                :size="22"
+                :class="settingsStore.speechEnabled ? 'text-blue-600' : 'text-brown-800/40'"
+              />
+            </div>
+            <div>
+              <div class="text-sm font-medium text-brown-900">语音引导开关</div>
+              <div class="text-xs text-brown-800/60 mt-0.5">
+                开启后烹饪时会自动播报步骤提示
+              </div>
+            </div>
+          </div>
+          <button
+            class="relative w-14 h-7 rounded-full transition-all duration-300"
+            :class="settingsStore.speechEnabled ? 'bg-blue-500' : 'bg-cream-300'"
+            @click="settingsStore.toggleSpeech()"
+          >
+            <div
+              class="absolute top-0.5 w-6 h-6 rounded-full bg-white shadow-md transition-all duration-300"
+              :class="settingsStore.speechEnabled ? 'left-7' : 'left-0.5'"
+            />
+          </button>
+        </div>
+
+        <div
+          v-if="settingsStore.speechEnabled"
+          class="pt-4 border-t border-cream-200 space-y-5"
+        >
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-sm font-medium text-brown-900">🎙️ 语速调节</span>
+              <span class="text-xs text-brown-800/60">
+                {{ SPEECH_RATE_OPTIONS.find((o) => o.value === settingsStore.speechRate)?.label }}
+              </span>
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+              <button
+                v-for="option in SPEECH_RATE_OPTIONS"
+                :key="option.value"
+                class="py-2.5 px-2 rounded-xl text-sm transition-all duration-300 border-2 active:scale-95"
+                :class="{
+                  'bg-blue-100 border-blue-400 text-blue-700 shadow-sm':
+                    settingsStore.speechRate === option.value,
+                  'bg-white border-cream-300 text-brown-800/70 hover:border-cream-400':
+                    settingsStore.speechRate !== option.value,
+                }"
+                @click="handleSpeechRateChange(option.value as SpeechRate)"
+              >
+                <div class="text-lg mb-0.5">
+                  {{ option.value === 'slow' ? '🐢' : option.value === 'normal' ? '🚶' : '🐇' }}
+                </div>
+                <div class="text-xs">{{ option.label }}</div>
+              </button>
+            </div>
+          </div>
+
+          <div class="pt-2">
+            <button
+              class="w-full py-3 rounded-xl text-sm font-medium transition-all duration-300 border-2 border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 active:scale-[0.98]"
+              @click="testSpeech"
+            >
+              🔊 试听一下
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="mb-10 animate-fade-slide" style="animation-delay: 0.2s">
       <div class="card-soft p-5 bg-gradient-to-br from-apricot-50 to-cream-100 border-apricot-200">
         <div class="flex items-start gap-3">
           <div class="text-3xl">💡</div>

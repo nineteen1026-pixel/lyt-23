@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, ref, watch, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { ArrowLeft, ChevronLeft, ChevronRight, Home, Leaf, AlertCircle } from 'lucide-vue-next';
+import { ArrowLeft, ChevronLeft, ChevronRight, Home, Leaf, AlertCircle, Volume2, VolumeX } from 'lucide-vue-next';
 import { getDishById } from '@/data/dishes';
 import { useCookingStore, type UnlockResult } from '@/stores/cooking';
 import { useChallengesStore } from '@/stores/challenges';
+import { useSettingsStore } from '@/stores/settings';
 import { unlocks, type Decoration, type Apron } from '@/data/unlocks';
 import type { ChallengeBadge } from '@/data/challenges';
 import {
@@ -13,6 +14,7 @@ import {
   MONTH_NAMES,
   getCurrentMonth,
 } from '@/data/seasonal';
+import { useSpeech } from '@/composables/useSpeech';
 import StepProgress from '@/components/cooking/StepProgress.vue';
 import WashStep from '@/components/cooking/WashStep.vue';
 import CutStep from '@/components/cooking/CutStep.vue';
@@ -36,7 +38,9 @@ const route = useRoute();
 const router = useRouter();
 const store = useCookingStore();
 const challengesStore = useChallengesStore();
+const settingsStore = useSettingsStore();
 const onboardingStore = useOnboardingStore();
+const { speak, stop, speakStep, isSpeaking, canSpeak } = useSpeech();
 
 const dishId = computed(() => route.params.dishId as string);
 const dish = computed(() => getDishById(dishId.value));
@@ -101,6 +105,28 @@ watch(
   },
   { immediate: true },
 );
+
+watch(
+  currentStep,
+  (step) => {
+    if (dish.value && isDishAvailable.value && !isLockedByThreshold.value) {
+      speakStep(step, dish.value.name);
+    }
+  },
+);
+
+function toggleSpeechGuide() {
+  settingsStore.toggleSpeech();
+  if (!settingsStore.speechEnabled) {
+    stop();
+  }
+}
+
+function replayStepSpeech() {
+  if (dish.value) {
+    speakStep(currentStep.value, dish.value.name);
+  }
+}
 
 onMounted(() => {
   cookingStartTime.value = Date.now();
@@ -379,6 +405,37 @@ function handleSaveNote(data: { content: string; rating: 1 | 2 | 3 | 4 | 5 }) {
               <div class="text-[11px] text-brown-800/60">预计 {{ dish.time }} 分钟</div>
             </div>
           </div>
+          <button
+            class="w-10 h-10 rounded-full card-soft flex items-center justify-center hover:shadow-soft transition-all active:scale-95"
+            :class="{ 'bg-apricot-100': settingsStore.speechEnabled }"
+            :title="settingsStore.speechEnabled ? '关闭语音引导' : '开启语音引导'"
+            @click="toggleSpeechGuide"
+          >
+            <Volume2 v-if="settingsStore.speechEnabled" :size="18" class="text-apricot-600" />
+            <VolumeX v-else :size="18" class="text-brown-800/40" />
+          </button>
+          <button
+            v-if="settingsStore.speechEnabled"
+            class="w-10 h-10 rounded-full card-soft flex items-center justify-center hover:shadow-soft transition-all active:scale-95"
+            :class="{ 'animate-pulse': isSpeaking }"
+            title="重播当前步骤"
+            @click="replayStepSpeech"
+          >
+            <svg
+              :size="18"
+              class="w-[18px] h-[18px] text-brown-800/70"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
+            </svg>
+          </button>
           <div
             class="w-10 h-10 rounded-full border-2 border-cream-300 flex items-end justify-center overflow-hidden shrink-0"
             title="当前围裙"

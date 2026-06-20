@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { Clock, ChefHat, AlertTriangle, Sparkles, Leaf, Lock } from 'lucide-vue-next';
+import { Clock, ChefHat, AlertTriangle, Sparkles, Leaf, Lock, Heart, Pin } from 'lucide-vue-next';
 import type { Dish } from '@/data/dishes';
 import { ALLERGENS } from '@/stores/profile';
 import { getSeasonalDishInfo } from '@/data/seasonal';
 import { useCookingStore } from '@/stores/cooking';
+import { useFavoritesStore } from '@/stores/favorites';
 
 const props = defineProps<{
   dish: Dish;
@@ -12,6 +13,7 @@ const props = defineProps<{
   hasAllergen?: boolean;
   matchingAllergens?: string[];
   tasteScore?: number;
+  showActions?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -19,6 +21,20 @@ const emit = defineEmits<{
 }>();
 
 const cookingStore = useCookingStore();
+const favoritesStore = useFavoritesStore();
+
+const isFav = computed(() => favoritesStore.isFavorite(props.dish.id));
+const isPinned = computed(() => favoritesStore.isPinned(props.dish.id));
+
+function handleToggleFavorite(e: Event) {
+  e.stopPropagation();
+  favoritesStore.toggleFavorite(props.dish.id);
+}
+
+function handleTogglePin(e: Event) {
+  e.stopPropagation();
+  favoritesStore.togglePin(props.dish.id);
+}
 
 const delayClass = computed(() => {
   const idx = props.index ?? 0;
@@ -98,6 +114,16 @@ const seasonalUnlockProgress = computed(() => {
         <div class="flex gap-1.5">
           <Transition name="fade">
             <div
+              v-if="isPinned"
+              class="chip bg-gradient-to-r from-rose-400 to-pink-500 text-white backdrop-blur-sm border border-rose-300 shadow-sm"
+              title="已置顶"
+            >
+              <Pin :size="12" class="fill-white" />
+              <span class="text-[11px] font-medium">置顶</span>
+            </div>
+          </Transition>
+          <Transition name="fade">
+            <div
               v-if="seasonalInfo?.limitedLabel"
               class="chip bg-gradient-to-r from-amber-400 to-orange-400 text-white backdrop-blur-sm border border-amber-300 shadow-sm"
             >
@@ -126,11 +152,36 @@ const seasonalUnlockProgress = computed(() => {
           </Transition>
         </div>
       </div>
-      <div
-        class="absolute top-3 right-3 chip bg-white/70 backdrop-blur-sm text-brown-800/80 border border-white/60"
-      >
-        <ChefHat :size="12" />
-        <span class="tracking-wider">{{ difficultyStars }}</span>
+      <div class="absolute top-3 right-3 flex items-center gap-1.5">
+        <button
+          v-if="showActions !== false"
+          class="w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90 backdrop-blur-sm border"
+          :class="isFav
+            ? 'bg-rose-500/90 text-white border-rose-400 hover:bg-rose-600/90'
+            : 'bg-white/70 text-brown-800/60 border-white/60 hover:bg-white/90 hover:text-rose-500'"
+          :title="isFav ? '取消收藏' : '加入收藏'"
+          @click="handleToggleFavorite"
+        >
+          <Heart :size="15" :class="isFav ? 'fill-white' : ''" />
+        </button>
+        <button
+          v-if="showActions !== false && isFav"
+          class="w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90 backdrop-blur-sm border"
+          :class="isPinned
+            ? 'bg-amber-500/90 text-white border-amber-400 hover:bg-amber-600/90'
+            : 'bg-white/70 text-brown-800/60 border-white/60 hover:bg-white/90 hover:text-amber-600'"
+          :title="isPinned ? '取消置顶' : '置顶此菜'"
+          @click="handleTogglePin"
+        >
+          <Pin :size="15" :class="isPinned ? 'fill-white' : ''" />
+        </button>
+        <div
+          v-if="!isFav || showActions === false"
+          class="chip bg-white/70 backdrop-blur-sm text-brown-800/80 border border-white/60"
+        >
+          <ChefHat :size="12" />
+          <span class="tracking-wider">{{ difficultyStars }}</span>
+        </div>
       </div>
       <div
         v-if="isSeasonalLocked"

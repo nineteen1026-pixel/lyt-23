@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, nextTick } from 'vue';
 import { X, Copy, Download, Share2, RefreshCw, Check, Loader2 } from 'lucide-vue-next';
 import html2canvas from 'html2canvas-pro';
 import ShareCardPreview from './ShareCardPreview.vue';
@@ -12,6 +12,7 @@ import {
 } from '@/data/share';
 import { useCookingStore } from '@/stores/cooking';
 import { useChallengesStore } from '@/stores/challenges';
+import { useToastStore } from '@/stores/toast';
 import { challenges, type ChallengeBadge } from '@/data/challenges';
 
 const props = defineProps<{
@@ -27,17 +28,22 @@ const emit = defineEmits<{
 
 const cookingStore = useCookingStore();
 const challengesStore = useChallengesStore();
+const toast = useToastStore();
 
 const selectedTheme = ref<CardThemeId>('warm');
 const shareText = ref('');
-const copied = ref(false);
+const copied = ref<'text' | 'link' | 'code' | null>(null);
 const saving = ref(false);
 const activeTab = ref<'card' | 'invite'>('card');
 const cardPreviewRef = ref<InstanceType<typeof ShareCardPreview> | null>(null);
 const cardElRef = ref<HTMLElement | null>(null);
 
+const SHARE_LINK_URL = window.location.origin || 'https://cozy-kitchen.app';
+
 const displayName = computed(() => props.userName || '小厨师');
 const displayAvatar = computed(() => props.avatarEmoji || '👨‍🍳');
+const inviteCode = computed(() => `COZY${cookingStore.totalDays.toString().padStart(4, '0')}`);
+const shareLink = computed(() => `${SHARE_LINK_URL}?invite=${inviteCode.value}`);
 
 const unlockedBadges = computed<ChallengeBadge[]>(() => {
   return challenges
@@ -99,6 +105,13 @@ watch(
   { immediate: true },
 );
 
+function resetCopiedAfter(kind: 'text' | 'link' | 'code', delay = 2000) {
+  copied.value = kind;
+  setTimeout(() => {
+    if (copied.value === kind) copied.value = null;
+  }, delay);
+}
+
 function refreshShareText() {
   shareText.value = generateShareText(
     cookingStore.totalDays,
@@ -106,39 +119,76 @@ function refreshShareText() {
     cookingStore.cookingHistory.length,
     challengeSummary.value?.title,
   );
+  toast.info('已更换分享文案', '🔄', 1500);
 }
 
 async function copyShareText() {
   try {
     await navigator.clipboard.writeText(shareText.value);
-    copied.value = true;
-    setTimeout(() => {
-      copied.value = false;
-    }, 2000);
+    resetCopiedAfter('text');
+    toast.success('分享文案已复制', '📋');
   } catch (err) {
     console.error('复制失败:', err);
+    toast.error('复制失败，请重试', '⚠️');
+  }
+}
+
+async function copyShareLink() {
+  try {
+    await navigator.clipboard.writeText(shareLink.value);
+    resetCopiedAfter('link');
+    toast.success('邀请链接已复制', '🔗');
+  } catch (err) {
+    console.error('复制失败:', err);
+    toast.error('复制失败，请重试', '⚠️');
   }
 }
 
 async function copyInviteCode() {
-  const code = `COZY${cookingStore.totalDays.toString().padStart(4, '0')}`;
   try {
-    await navigator.clipboard.writeText(code);
-    copied.value = true;
-    setTimeout(() => {
-      copied.value = false;
-    }, 2000);
+    await navigator.clipboard.writeText(inviteCode.value);
+    resetCopiedAfter('code');
+    toast.success(`邀请码 ${inviteCode.value} 已复制`, '🎫');
   } catch (err) {
     console.error('复制失败:', err);
+    toast.error('复制失败，请重试', '⚠️');
   }
 }
 
+function handleWechatShare() {
+  toast.info('请截图后在微信中发送给好友', '💬', 3000);
+}
+
+function handleXiaohongshuShare() {
+  toast.info('请保存卡片后打开小红书发布', '📕', 3000);
+}
+
+function handleQQShare() {
+  const url = `https://connect.qq.com/widget/shareqq/index.html?url=${encodeURIComponent(shareLink.value)}&title=${encodeURIComponent('我的小厨房打卡分享')}&summary=${encodeURIComponent(shareText.value)}&desc=${encodeURIComponent(shareText.value)}`;
+  window.open(url, '_blank', 'width=600,height=500');
+  toast.info('正在打开 QQ 分享', '🐧');
+}
+
+async function getCardCanvas() {
+  if (cardElRef.value) return cardElRef.value;
+
+  if (activeTab.value !== 'card') {
+    activeTab.value = 'card';
+    await nextTick();
+  }
+
+  return cardElRef.value;
+}
+
 async function saveCardAsImage() {
-  if (!cardElRef.value || saving.value) return;
+  if (saving.value) return;
 
   saving.value = true;
   try {
-    const canvas = await html2canvas(cardElRef.value, {
+    const el = await getCardCanvas();
+    if (!el) throw new Error('无法获取卡片元素');
+
+    const canvas = await html2canvas(el, {
       scale: 2,
       backgroundColor: null,
       useCORS: true,
@@ -151,9 +201,11 @@ async function saveCardAsImage() {
     link.href = canvas.toDataURL('image/png');
     link.click();
 
+    toast.success('卡片已保存到本地', '💾');
     emit('share', shareCardData.value);
   } catch (err) {
     console.error('保存卡片失败:', err);
+    toast.error('保存失败，请重试', '😢');
   } finally {
     saving.value = false;
   }
@@ -162,12 +214,13 @@ async function saveCardAsImage() {
 async function handleShare() {
   if (saving.value) return;
 
-  if (navigator.share && navigator.canShare) {
+  if (navigator.share) {
     try {
       saving.value = true;
-      if (!cardElRef.value) throw new Error('no card element');
+      const el = await getCardCanvas();
+      if (!el) throw new Error('无法获取卡片元素');
 
-      const canvas = await html2canvas(cardElRef.value, {
+      const canvas = await html2canvas(el, {
         scale: 2,
         backgroundColor: null,
         useCORS: true,
@@ -186,8 +239,21 @@ async function handleShare() {
         files: [file],
       };
 
-      if (navigator.canShare(shareData)) {
+      if (navigator.canShare?.(shareData)) {
         await navigator.share(shareData);
+        toast.success('分享成功', '🎉');
+        emit('share', shareCardData.value);
+        saving.value = false;
+        return;
+      }
+
+      if (navigator.share) {
+        await navigator.share({
+          title: '我的小厨房打卡分享',
+          text: shareText.value,
+          url: shareLink.value,
+        });
+        toast.success('分享成功', '🎉');
         emit('share', shareCardData.value);
         saving.value = false;
         return;
@@ -197,6 +263,8 @@ async function handleShare() {
         saving.value = false;
         return;
       }
+      console.error('系统分享失败:', err);
+      toast.info('当前环境不支持系统分享，已自动保存图片', '📷', 2500);
     } finally {
       saving.value = false;
     }
@@ -261,7 +329,7 @@ function handleClose() {
         </div>
 
         <div class="flex-1 overflow-y-auto p-5">
-          <div v-if="activeTab === 'card'" class="space-y-5">
+          <div v-show="activeTab === 'card'" class="space-y-5">
             <div class="flex justify-center" ref="cardElRef">
               <ShareCardPreview ref="cardPreviewRef" :data="shareCardData" size="normal" />
             </div>
@@ -315,14 +383,14 @@ function handleClose() {
             <div class="grid grid-cols-2 gap-3">
               <button
                 class="flex items-center justify-center gap-2 py-3 rounded-2xl border-2 transition-all duration-200 active:scale-[0.98]"
-                :class="copied
+                :class="copied === 'text'
                   ? 'bg-matcha-50 border-matcha-300 text-matcha-700'
                   : 'bg-white border-cream-300 text-brown-800/80 hover:border-cream-400'"
                 @click="copyShareText"
               >
-                <Check v-if="copied" :size="18" />
+                <Check v-if="copied === 'text'" :size="18" />
                 <Copy v-else :size="18" />
-                <span class="text-sm font-medium">{{ copied ? '已复制' : '复制文案' }}</span>
+                <span class="text-sm font-medium">{{ copied === 'text' ? '已复制' : '复制文案' }}</span>
               </button>
               <button
                 class="flex items-center justify-center gap-2 py-3 rounded-2xl bg-cream-100 border-2 border-cream-300 text-brown-800/80 hover:bg-cream-50 transition-all duration-200 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
@@ -336,7 +404,7 @@ function handleClose() {
             </div>
           </div>
 
-          <div v-else class="space-y-5">
+          <div v-show="activeTab === 'invite'" class="space-y-5">
             <div class="card-soft p-5 bg-gradient-to-br from-apricot-50 to-cream-100">
               <div class="text-center mb-4">
                 <div class="text-5xl mb-3">🎉</div>
@@ -388,19 +456,28 @@ function handleClose() {
             <div class="space-y-3">
               <div class="text-sm font-medium text-brown-900">分享方式</div>
               <div class="grid grid-cols-4 gap-3">
-                <button class="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white border-2 border-cream-300 hover:border-cream-400 transition-all duration-200 active:scale-[0.95]">
+                <button
+                  class="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white border-2 border-cream-300 hover:border-cream-400 transition-all duration-200 active:scale-[0.95]"
+                  @click="handleWechatShare"
+                >
                   <div class="w-10 h-10 rounded-xl bg-green-500 flex items-center justify-center text-white text-xl">
                     💬
                   </div>
                   <span class="text-xs text-brown-800/70">微信</span>
                 </button>
-                <button class="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white border-2 border-cream-300 hover:border-cream-400 transition-all duration-200 active:scale-[0.95]">
+                <button
+                  class="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white border-2 border-cream-300 hover:border-cream-400 transition-all duration-200 active:scale-[0.95]"
+                  @click="handleXiaohongshuShare"
+                >
                   <div class="w-10 h-10 rounded-xl bg-red-500 flex items-center justify-center text-white text-xl">
                     📕
                   </div>
                   <span class="text-xs text-brown-800/70">小红书</span>
                 </button>
-                <button class="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white border-2 border-cream-300 hover:border-cream-400 transition-all duration-200 active:scale-[0.95]">
+                <button
+                  class="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white border-2 border-cream-300 hover:border-cream-400 transition-all duration-200 active:scale-[0.95]"
+                  @click="handleQQShare"
+                >
                   <div class="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center text-white text-xl">
                     🐧
                   </div>
@@ -408,12 +485,22 @@ function handleClose() {
                 </button>
                 <button
                   class="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white border-2 border-cream-300 hover:border-cream-400 transition-all duration-200 active:scale-[0.95]"
-                  @click="copyShareText"
+                  :class="copied === 'link' ? 'border-matcha-300 bg-matcha-50/60' : ''"
+                  @click="copyShareLink"
                 >
-                  <div class="w-10 h-10 rounded-xl bg-gray-500 flex items-center justify-center text-white text-xl">
-                    <Copy :size="18" />
+                  <div
+                    class="w-10 h-10 rounded-xl flex items-center justify-center text-white text-xl"
+                    :class="copied === 'link' ? 'bg-matcha-500' : 'bg-gray-500'"
+                  >
+                    <Check v-if="copied === 'link'" :size="18" />
+                    <Copy v-else :size="18" />
                   </div>
-                  <span class="text-xs text-brown-800/70">复制链接</span>
+                  <span
+                    class="text-xs"
+                    :class="copied === 'link' ? 'text-matcha-700 font-medium' : 'text-brown-800/70'"
+                  >
+                    {{ copied === 'link' ? '已复制' : '复制链接' }}
+                  </span>
                 </button>
               </div>
             </div>
@@ -433,14 +520,15 @@ function handleClose() {
               <div class="mt-3 flex items-center gap-2">
                 <div class="flex-1 h-10 px-3 rounded-xl bg-cream-100 flex items-center justify-center">
                   <span class="text-display text-lg text-apricot-600 tracking-widest">
-                    COZY{{ cookingStore.totalDays.toString().padStart(4, '0') }}
+                    {{ inviteCode }}
                   </span>
                 </div>
                 <button
                   class="h-10 px-4 rounded-xl bg-apricot-500 text-white text-sm font-medium hover:bg-apricot-600 transition-colors active:scale-[0.95]"
+                  :class="copied === 'code' ? '!bg-matcha-500' : ''"
                   @click="copyInviteCode"
                 >
-                  {{ copied ? '已复制' : '复制' }}
+                  {{ copied === 'code' ? '已复制' : '复制' }}
                 </button>
               </div>
             </div>

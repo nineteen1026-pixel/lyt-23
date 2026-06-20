@@ -2,6 +2,7 @@
 import { RouterView } from 'vue-router';
 import OnboardingOverlay from '@/components/OnboardingOverlay.vue';
 import TimerAlertToast from '@/components/timer/TimerAlertToast.vue';
+import Toast from '@/components/Toast.vue';
 import { useKitchenTimer } from '@/composables/useKitchenTimer';
 
 useKitchenTimer();
@@ -16,5 +17,6 @@ useKitchenTimer();
     </RouterView>
     <OnboardingOverlay />
     <TimerAlertToast />
+    <Toast />
   </div>
 </template>

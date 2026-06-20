@@ -1,10 +1,15 @@
 <script setup lang="ts">
-import { ref, onUnmounted } from 'vue';
+import { ref, onUnmounted, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const props = defineProps<{
   dishEmoji: string;
   dishName: string;
 }>();
+
+const subtitle = computed(() => t('steps.wash.subtitle', { dishName: props.dishName }));
 
 const emit = defineEmits<{
   (e: 'complete'): void;
@@ -131,10 +136,10 @@ onUnmounted(cleanUp);
   <div class="card-soft p-6 md:p-8 animate-pop-in">
     <div class="text-center mb-6">
       <h2 class="text-display text-2xl md:text-3xl text-brown-900 mb-2">
-        清洗食材
+        {{ t('steps.wash.title') }}
       </h2>
       <p class="text-brown-800/70">
-        一起来洗干净 {{ dishName }} 吧！
+        {{ subtitle }}
       </p>
     </div>
 
@@ -212,7 +217,7 @@ onUnmounted(cleanUp);
             class="absolute top-4 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-sm px-5 py-2 rounded-full shadow-lg animate-bounce-soft border-2 border-matcha-300"
           >
             <span class="text-display text-lg md:text-xl text-matcha-600">
-              洗干净啦！✨
+              {{ t('steps.wash.completeMessage') }}
             </span>
           </div>
         </Transition>
@@ -222,7 +227,7 @@ onUnmounted(cleanUp);
             v-if="!isWashing && !isComplete"
             class="absolute bottom-4 left-1/2 -translate-x-1/2 text-blue-600/70 text-sm font-medium animate-pulse"
           >
-            👆 点击食材或下方按钮开始清洗
+            {{ t('steps.wash.clickHint') }}
           </div>
         </Transition>
       </div>
@@ -230,7 +235,7 @@ onUnmounted(cleanUp);
 
     <div class="max-w-sm mx-auto mb-6">
       <div class="flex justify-between text-sm text-brown-800/70 mb-2">
-        <span>清洗进度</span>
+        <span>{{ t('steps.wash.progressLabel') }}</span>
         <span class="font-medium text-blue-600">{{ progress }}%</span>
       </div>
       <div
@@ -260,7 +265,7 @@ onUnmounted(cleanUp);
         @click="startWash"
       >
         <span v-if="!isWashing && !isComplete">
-          💧 冲水！
+          {{ t('steps.wash.startButton') }}
         </span>
         <span v-else-if="isWashing" class="inline-flex items-center gap-2">
           <svg
@@ -282,10 +287,10 @@ onUnmounted(cleanUp);
               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
             />
           </svg>
-          清洗中...
+          {{ t('steps.wash.washingButton') }}
         </span>
         <span v-else>
-          ✓ 完成！
+          {{ t('steps.wash.completeButton') }}
         </span>
       </button>
     </div>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { Check } from 'lucide-vue-next';
 
 interface Step {
@@ -8,16 +9,18 @@ interface Step {
   icon: string;
 }
 
+const { t } = useI18n();
+
 const props = withDefaults(defineProps<{
   currentStep: number;
   steps?: Step[];
 }>(), {
   steps: () => [
-    { id: 'wash', name: '洗菜', icon: '🧼' },
-    { id: 'cut', name: '切配', icon: '🔪' },
-    { id: 'season', name: '调味', icon: '🧂' },
-    { id: 'bake', name: '烘烤', icon: '🔥' },
-    { id: 'plate', name: '盛盘', icon: '🍽️' },
+    { id: 'wash', name: t('steps.progress.wash'), icon: '🧼' },
+    { id: 'cut', name: t('steps.progress.cut'), icon: '🔪' },
+    { id: 'season', name: t('steps.progress.season'), icon: '🧂' },
+    { id: 'bake', name: t('steps.progress.bake'), icon: '🔥' },
+    { id: 'plate', name: t('steps.progress.plate'), icon: '🍽️' },
   ],
 });
 

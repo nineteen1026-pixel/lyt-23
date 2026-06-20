@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, onUnmounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useProfileStore } from '@/stores/profile';
+import { useDishI18n } from '@/composables/useDishI18n';
 
+const { t } = useI18n();
+const { getLocalizedDishById } = useDishI18n();
 const profileStore = useProfileStore();
 
 interface SeasoningConfig {
@@ -171,9 +175,9 @@ const progressText = computed(() => `${sprinkledCount.value + initialSkipped.val
 const isButtonDisabled = computed(() => !allSprinkled.value || isMixing.value);
 
 const buttonText = computed(() => {
-  if (isMixing.value) return '拌匀中...';
-  if (allSprinkled.value) return '拌匀！';
-  return '请先撒完所有调料';
+  if (isMixing.value) return t('steps.season.mixingButton');
+  if (allSprinkled.value) return t('steps.season.mixButton');
+  return t('steps.season.waitButton');
 });
 
 function getBottleTransform(index: number, state: string): string {
@@ -330,8 +334,8 @@ onUnmounted(cleanUp);
 <template>
   <div class="card-soft p-6 animate-fade-slide">
     <div class="text-center mb-4">
-      <h2 class="text-display text-2xl text-brown-900 mb-1">调味环节</h2>
-      <p class="text-sm text-brown-800/70">点击调料瓶，给食材撒上美味~</p>
+      <h2 class="text-display text-2xl text-brown-900 mb-1">{{ t('steps.season.title') }}</h2>
+      <p class="text-sm text-brown-800/70">{{ t('steps.season.subtitle') }}</p>
     </div>
 
     <div class="relative mx-auto mb-6" style="width: 360px; height: 340px;">
@@ -414,8 +418,7 @@ onUnmounted(cleanUp);
           style="top: 60px; transform: translateX(-50%);"
         >
           <div class="chip bg-apricot-500 text-white shadow-card text-sm px-5 py-2.5">
-            <span class="text-display">调味完成</span>
-            <span>🧂✨</span>
+            <span class="text-display">{{ t('steps.season.completeMessage') }}</span>
           </div>
         </div>
       </Transition>
@@ -504,7 +507,7 @@ onUnmounted(cleanUp);
                   v-if="seasoningStates.get(seasoning) === 'skipped'"
                 >
                   <div class="text-[10px] bg-gray-400 text-white px-1.5 py-0.5 rounded-full font-bold">
-                    跳过
+                    {{ t('steps.season.skipped') }}
                   </div>
                 </div>
               </div>
@@ -569,7 +572,7 @@ onUnmounted(cleanUp);
 
     <div class="mb-5">
       <div class="flex items-center justify-between mb-2">
-        <span class="text-sm text-brown-800/70">调味进度</span>
+        <span class="text-sm text-brown-800/70">{{ t('steps.season.progressLabel') }}</span>
         <span class="text-sm font-medium text-brown-900">{{ progressText }}</span>
       </div>
       <div class="w-full h-3 bg-cream-200 rounded-full overflow-hidden border border-white/60">
@@ -619,7 +622,7 @@ onUnmounted(cleanUp);
           <span
             v-if="seasoningStates.get(s) === 'skipped'"
             class="text-gray-400 text-xs"
-          >跳过</span>
+          >{{ t('steps.season.skipped') }}</span>
         </div>
         <div
           class="text-[10px] leading-none transition-colors duration-300"
@@ -631,13 +634,13 @@ onUnmounted(cleanUp);
           }"
         >
           <template v-if="seasoningStates.get(s) === 'skipped'">
-            已跳过（{{ profileStore.getRecommendedDosage(s) }}）
+            {{ t('steps.season.skippedWithReason', { dosage: profileStore.getRecommendedDosage(s) }) }}
           </template>
-          <template v-else-if="profileStore.getRecommendedDosage(s) !== '正常'">
-            建议：{{ profileStore.getRecommendedDosage(s) }}
+          <template v-else-if="profileStore.getRecommendedDosage(s) !== '正常' && profileStore.getRecommendedDosage(s) !== 'Normal'">
+            {{ t('steps.season.recommended', { dosage: profileStore.getRecommendedDosage(s) }) }}
           </template>
           <template v-else>
-            正常用量
+            {{ t('steps.season.normalDosage') }}
           </template>
         </div>
       </div>

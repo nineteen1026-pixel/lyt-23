@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const props = defineProps<{
   dishEmoji: string;
@@ -16,9 +19,9 @@ const showKnifeFlash = ref(false);
 const cutCompleted = ref(false);
 
 const buttonText = computed(() => {
-  if (cutCompleted.value) return '下一步';
-  if (cuts.value === 0) return '开始切菜';
-  return `切第${cuts.value + 1}刀`;
+  if (cutCompleted.value) return t('steps.cut.nextButton');
+  if (cuts.value === 0) return t('steps.cut.startButton');
+  return t('steps.cut.cutButton', { cutNumber: cuts.value + 1 });
 });
 
 const progressText = computed(() => `${Math.min(cuts.value, TOTAL_CUTS)}/${TOTAL_CUTS}`);
@@ -91,8 +94,8 @@ function handleCut() {
 <template>
   <div class="card-soft p-6 animate-fade-slide">
     <div class="text-center mb-4">
-      <h2 class="text-display text-2xl text-brown-900 mb-1">切菜环节</h2>
-      <p class="text-sm text-brown-800/70">点击按钮，把食材切好备用~</p>
+      <h2 class="text-display text-2xl text-brown-900 mb-1">{{ t('steps.cut.title') }}</h2>
+      <p class="text-sm text-brown-800/70">{{ t('steps.cut.subtitle') }}</p>
     </div>
 
     <div class="relative mx-auto mb-6" style="width: 340px; height: 260px;">
@@ -217,8 +220,7 @@ function handleCut() {
           class="absolute -top-2 left-1/2 -translate-x-1/2 z-30 animate-pop-in"
         >
           <div class="chip bg-apricot-500 text-white shadow-card text-sm px-4 py-2">
-            <span class="text-display">切好啦！</span>
-            <span>🔪✨</span>
+            <span class="text-display">{{ t('steps.cut.completeMessage') }}</span>
           </div>
         </div>
       </Transition>
@@ -226,7 +228,7 @@ function handleCut() {
 
     <div class="mb-5">
       <div class="flex items-center justify-between mb-2">
-        <span class="text-sm text-brown-800/70">切菜进度</span>
+        <span class="text-sm text-brown-800/70">{{ t('steps.cut.progressLabel') }}</span>
         <span class="text-sm font-medium text-brown-900">{{ progressText }}</span>
       </div>
       <div class="w-full h-3 bg-cream-200 rounded-full overflow-hidden border border-white/60">

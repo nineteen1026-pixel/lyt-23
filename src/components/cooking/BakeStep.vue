@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, watch, onUnmounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useTimerStore } from '@/stores/timer';
+
+const { t } = useI18n();
 
 const props = withDefaults(defineProps<{
   dishEmoji: string;
@@ -92,15 +95,15 @@ const temperatureColor = computed(() => {
 const buttonConfig = computed(() => {
   switch (stage.value) {
     case 'idle':
-      return { text: '放入食材', emoji: '🍳', disabled: false, class: '' };
+      return { text: t('steps.bake.insertButton'), emoji: '🍳', disabled: false, class: '' };
     case 'inserting':
     case 'closing':
     case 'baking':
-      return { text: '烘烤中...', emoji: '🔥', disabled: true, class: '' };
+      return { text: t('steps.bake.bakingButton'), emoji: '🔥', disabled: true, class: '' };
     case 'done':
-      return { text: '出炉！🍽️', emoji: '✨', disabled: false, class: 'bg-gradient-to-r from-matcha-500 to-matcha-600 hover:from-matcha-600 hover:to-matcha-700' };
+      return { text: t('steps.bake.doneButton'), emoji: '✨', disabled: false, class: 'bg-gradient-to-r from-matcha-500 to-matcha-600 hover:from-matcha-600 hover:to-matcha-700' };
     default:
-      return { text: '放入食材', emoji: '🍳', disabled: false, class: '' };
+      return { text: t('steps.bake.insertButton'), emoji: '🍳', disabled: false, class: '' };
   }
 });
 
@@ -203,10 +206,10 @@ onUnmounted(cleanUp);
   <div class="card-soft p-6 md:p-8 animate-fade-slide">
     <div class="text-center mb-6">
       <h2 class="text-display text-2xl md:text-3xl text-brown-900 mb-2">
-        烤箱烘烤
+        {{ t('steps.bake.title') }}
       </h2>
       <p class="text-brown-800/70">
-        把食材放进烤箱，等待美味出炉~
+        {{ t('steps.bake.subtitle') }}
       </p>
     </div>
 
@@ -539,7 +542,7 @@ onUnmounted(cleanUp);
                      border-2 border-apricot-300 shadow-card animate-pulse"
             >
               <span class="text-sm font-medium text-brown-800">
-                👇 点击下方按钮放入
+                {{ t('steps.bake.hint') }}
               </span>
             </div>
           </div>
@@ -594,7 +597,7 @@ onUnmounted(cleanUp);
     <div class="max-w-sm mx-auto mb-6 space-y-4">
       <div>
         <div class="flex justify-between text-sm text-brown-800/70 mb-2">
-          <span>烘烤进度</span>
+          <span>{{ t('steps.bake.progressLabel') }}</span>
           <span class="font-medium text-apricot-600">{{ effectiveProgress }}%</span>
         </div>
         <div
@@ -621,7 +624,7 @@ onUnmounted(cleanUp);
 
       <div>
         <div class="flex justify-between text-sm text-brown-800/70 mb-2">
-          <span>炉内温度</span>
+          <span>{{ t('steps.bake.temperatureLabel') }}</span>
           <span class="font-medium" :style="{ color: temperatureColor }">{{ effectiveTemperature }}°C</span>
         </div>
         <div
@@ -682,14 +685,14 @@ onUnmounted(cleanUp);
         @click="emit('linkTimer')"
       >
         <span>⏱️</span>
-        <span>关联全局厨房计时器</span>
+        <span>{{ t('steps.bake.linkTimer') }}</span>
       </button>
       <div
         v-if="hasLinkedTimer && stage !== 'done'"
         class="flex items-center gap-2 text-sm text-matcha-600 font-medium"
       >
         <span class="w-2 h-2 rounded-full bg-matcha-500 animate-pulse" />
-        <span>已关联全局厨房计时器</span>
+        <span>{{ t('steps.bake.timerLinked') }}</span>
       </div>
     </div>
   </div>

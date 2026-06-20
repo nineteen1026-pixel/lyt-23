@@ -5,12 +5,15 @@ const props = withDefaults(defineProps<{
   dishEmoji: string;
   dishColor: string;
   time?: number;
+  hasLinkedTimer?: boolean;
 }>(), {
   time: 15,
+  hasLinkedTimer: false,
 });
 
 const emit = defineEmits<{
   (e: 'complete'): void;
+  (e: 'linkTimer'): void;
 }>();
 
 type BakeStage = 'idle' | 'inserting' | 'closing' | 'baking' | 'done';
@@ -570,7 +573,7 @@ onUnmounted(cleanUp);
       </div>
     </div>
 
-    <div class="flex justify-center">
+    <div class="flex flex-col items-center gap-3">
       <button
         class="btn-primary text-lg md:text-xl px-10 py-4 min-w-[200px] relative overflow-hidden"
         :class="buttonConfig.class"
@@ -602,6 +605,22 @@ onUnmounted(cleanUp);
           </svg>
         </span>
       </button>
+
+      <button
+        v-if="stage === 'idle' && !hasLinkedTimer"
+        class="btn-secondary text-sm px-5 py-2.5 flex items-center gap-2"
+        @click="emit('linkTimer')"
+      >
+        <span>⏱️</span>
+        <span>关联全局厨房计时器</span>
+      </button>
+      <div
+        v-if="hasLinkedTimer && stage !== 'done'"
+        class="flex items-center gap-2 text-sm text-matcha-600 font-medium"
+      >
+        <span class="w-2 h-2 rounded-full bg-matcha-500 animate-pulse" />
+        <span>已关联全局厨房计时器</span>
+      </div>
     </div>
   </div>
 </template>

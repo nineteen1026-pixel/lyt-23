@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { CalendarCheck, Flame, Award, User, BarChart3 } from 'lucide-vue-next';
+import { CalendarCheck, Flame, Award, User, BarChart3, Timer } from 'lucide-vue-next';
 import { useCookingStore } from '@/stores/cooking';
 import { useProfileStore } from '@/stores/profile';
+import { useTimerStore } from '@/stores/timer';
 import { unlocks } from '@/data/unlocks';
 
 const store = useCookingStore();
 const profileStore = useProfileStore();
+const timerStore = useTimerStore();
 const router = useRouter();
 
 const activeApronData = computed(() =>
@@ -95,6 +97,30 @@ function getApronBackground(color: string, stripe: string | null): string {
           <div class="text-sm font-medium text-brown-800 leading-none">烹饪统计</div>
           <div class="text-[11px] text-brown-800/60 mt-1">{{ store.cookingHistory.length }} 次记录</div>
         </div>
+      </button>
+
+      <button
+        class="flex items-center gap-2 card-soft px-4 py-3 hover:shadow-soft transition-all active:scale-95 relative"
+        @click="router.push('/timer')"
+      >
+        <div
+          class="w-10 h-10 rounded-full flex items-center justify-center"
+          :class="timerStore.hasRunningTimers ? 'bg-apricot-500/15 text-apricot-500' : 'bg-cream-200 text-brown-800/40'"
+        >
+          <Timer :size="18" :stroke-width="2.2" />
+        </div>
+        <div class="text-left">
+          <div class="text-sm font-medium text-brown-800 leading-none">厨房计时</div>
+          <div class="text-[11px] text-brown-800/60 mt-1">
+            {{ timerStore.activeTimerCount > 0 ? `${timerStore.activeTimerCount} 个运行中` : '点击管理' }}
+          </div>
+        </div>
+        <span
+          v-if="timerStore.hasRunningTimers"
+          class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-apricot-500 text-white text-[9px] font-bold flex items-center justify-center animate-pulse"
+        >
+          {{ timerStore.activeTimerCount }}
+        </span>
       </button>
 
       <button

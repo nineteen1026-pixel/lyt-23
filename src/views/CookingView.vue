@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed, ref, watch, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { ArrowLeft, ChevronLeft, ChevronRight, Home, Leaf, AlertCircle, Volume2, VolumeX } from 'lucide-vue-next';
+import { ArrowLeft, ChevronLeft, ChevronRight, Home, Leaf, AlertCircle, Volume2, VolumeX, Timer } from 'lucide-vue-next';
 import { getDishById } from '@/data/dishes';
 import { useCookingStore, type UnlockResult } from '@/stores/cooking';
 import { useChallengesStore } from '@/stores/challenges';
 import { useSettingsStore } from '@/stores/settings';
+import { useTimerStore } from '@/stores/timer';
+import { useKitchenTimer } from '@/composables/useKitchenTimer';
 import { unlocks, type Decoration, type Apron } from '@/data/unlocks';
 import type { ChallengeBadge } from '@/data/challenges';
 import {
@@ -24,6 +26,7 @@ import FinishModal from '@/components/FinishModal.vue';
 import UnlockModal from '@/components/UnlockModal.vue';
 import NoteEditor from '@/components/NoteEditor.vue';
 import ChallengeRewardModal from '@/components/challenges/ChallengeRewardModal.vue';
+import TimerAlertToast from '@/components/timer/TimerAlertToast.vue';
 import { useOnboardingStore } from '@/stores/onboarding';
 
 interface UnlockItem {
@@ -40,6 +43,8 @@ const store = useCookingStore();
 const challengesStore = useChallengesStore();
 const settingsStore = useSettingsStore();
 const onboardingStore = useOnboardingStore();
+const timerStore = useTimerStore();
+useKitchenTimer();
 const { speak, stop, speakStep, isSpeaking, canSpeak } = useSpeech();
 
 const dishId = computed(() => route.params.dishId as string);
@@ -74,6 +79,23 @@ const cookingStartTime = ref<number | null>(null);
 const finishDuration = ref(0);
 const finishShareText = ref('');
 const cookingFinished = ref(false);
+
+const hasLinkedBakeTimer = computed(() => {
+  if (!dish.value) return false;
+  return !!timerStore.findLinkedTimer(dish.value.id, 'bake');
+});
+
+function linkBakeTimerToGlobal(): void {
+  if (!dish.value) return;
+  const timer = timerStore.addDishBakeTimer(
+    dish.value.id,
+    dish.value.name,
+    dish.value.emoji,
+    dish.value.color,
+    dish.value.time,
+  );
+  timerStore.startTimer(timer.id);
+}
 
 const activeApronData = computed(() =>
   unlocks.aprons.find((a) => a.id === store.activeApron) ?? unlocks.aprons[0],
@@ -437,6 +459,20 @@ function handleSaveNote(data: { content: string; rating: 1 | 2 | 3 | 4 | 5 }) {
               />
             </svg>
           </button>
+          <button
+            class="w-10 h-10 rounded-full card-soft flex items-center justify-center hover:shadow-soft transition-all active:scale-95 relative"
+            :class="{ 'bg-apricot-100': timerStore.hasRunningTimers }"
+            title="厨房计时器"
+            @click="router.push('/timer')"
+          >
+            <Timer :size="18" :class="timerStore.hasRunningTimers ? 'text-apricot-600' : 'text-brown-800/40'" />
+            <span
+              v-if="timerStore.activeTimerCount > 0"
+              class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-apricot-500 text-white text-[9px] font-bold flex items-center justify-center"
+            >
+              {{ timerStore.activeTimerCount }}
+            </span>
+          </button>
           <div
             class="w-10 h-10 rounded-full border-2 border-cream-300 flex items-end justify-center overflow-hidden shrink-0"
             title="当前围裙"
@@ -481,7 +517,9 @@ function handleSaveNote(data: { content: string; rating: 1 | 2 | 3 | 4 | 5 }) {
             :dish-emoji="dish.emoji"
             :dish-color="dish.color"
             :time="dish.time"
+            :has-linked-timer="hasLinkedBakeTimer"
             @complete="onStepComplete(3)"
+            @link-timer="linkBakeTimerToGlobal"
           />
         </Transition>
       </div>
@@ -560,6 +598,8 @@ function handleSaveNote(data: { content: string; rating: 1 | 2 | 3 | 4 | 5 }) {
           @close="handleCloseChallengeReward"
         />
       </Transition>
+
+      <TimerAlertToast />
     </template>
   </div>
 </template>

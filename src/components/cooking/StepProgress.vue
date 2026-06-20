@@ -9,23 +9,33 @@ interface Step {
   icon: string;
 }
 
+const DEFAULT_STEPS: Omit<Step, 'name'>[] = [
+  { id: 'wash', icon: '🧼' },
+  { id: 'cut', icon: '🔪' },
+  { id: 'season', icon: '🧂' },
+  { id: 'bake', icon: '🔥' },
+  { id: 'plate', icon: '🍽️' },
+];
+
 const { t } = useI18n();
 
-const props = withDefaults(defineProps<{
+const props = defineProps<{
   currentStep: number;
   steps?: Step[];
-}>(), {
-  steps: () => [
-    { id: 'wash', name: t('steps.progress.wash'), icon: '🧼' },
-    { id: 'cut', name: t('steps.progress.cut'), icon: '🔪' },
-    { id: 'season', name: t('steps.progress.season'), icon: '🧂' },
-    { id: 'bake', name: t('steps.progress.bake'), icon: '🔥' },
-    { id: 'plate', name: t('steps.progress.plate'), icon: '🍽️' },
-  ],
+}>();
+
+const localizedSteps = computed<Step[]>(() => {
+  if (props.steps && props.steps.length > 0) {
+    return props.steps;
+  }
+  return DEFAULT_STEPS.map((step) => ({
+    ...step,
+    name: t(`steps.progress.${step.id}`),
+  }));
 });
 
 const progressWidth = computed(() => {
-  const max = props.steps.length - 1;
+  const max = localizedSteps.value.length - 1;
   if (max <= 0) return '0%';
   const pct = Math.min(100, (props.currentStep / max) * 100);
   return `${pct}%`;
@@ -50,7 +60,7 @@ function getStepState(index: number): 'completed' | 'current' | 'pending' {
 
       <div class="relative flex justify-between items-start">
         <div
-          v-for="(step, index) in steps"
+          v-for="(step, index) in localizedSteps"
           :key="step.id"
           class="flex flex-col items-center flex-1"
         >

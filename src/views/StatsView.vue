@@ -8,6 +8,7 @@ import MonthlyBarChart from '@/components/stats/MonthlyBarChart.vue';
 import DishPieChart from '@/components/stats/DishPieChart.vue';
 import type { MonthlyData } from '@/components/stats/MonthlyBarChart.vue';
 import type { DishSlice } from '@/components/stats/DishPieChart.vue';
+import { useDishI18n } from '@/composables/useDishI18n';
 
 interface MonthlyDataWithKey extends MonthlyData {
   key: string;
@@ -15,6 +16,7 @@ interface MonthlyDataWithKey extends MonthlyData {
 
 const router = useRouter();
 const store = useCookingStore();
+const { getLocalizedDishById } = useDishI18n();
 
 const MONTH_SHORT = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
 
@@ -55,9 +57,10 @@ const dishDistribution = computed<DishSlice[]>(() => {
   const sorted = Array.from(counts.entries())
     .map(([id, count]) => {
       const dish = getDishById(id);
+      const localizedDish = getLocalizedDishById(id);
       return {
         id,
-        name: dish?.name ?? id,
+        name: localizedDish?.name ?? dish?.name ?? id,
         emoji: dish?.emoji ?? '🍽️',
         count,
         color: dish?.color ?? '#FF8C42',

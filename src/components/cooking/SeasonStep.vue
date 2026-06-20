@@ -132,8 +132,54 @@ const DEFAULT_CONFIG: SeasoningConfig = {
   emoji: '🧴',
 };
 
+const SEASONING_ZH_TO_EN: Record<string, string> = {
+  '盐': 'Salt',
+  '糖': 'Sugar',
+  '酱油': 'Soy Sauce',
+  '黑胡椒': 'Black Pepper',
+  '生抽': 'Light Soy Sauce',
+  '老抽': 'Dark Soy Sauce',
+  '醋': 'Vinegar',
+  '料酒': 'Cooking Wine',
+  '蚝油': 'Oyster Sauce',
+  '味精': 'MSG',
+  '鸡精': 'Chicken Essence',
+  '辣椒粉': 'Chili Powder',
+  '花椒粉': 'Sichuan Pepper Powder',
+  '孜然': 'Cumin',
+  '淀粉': 'Starch',
+  '味噌': 'Miso',
+  '清酒': 'Sake',
+  '蜂蜜': 'Honey',
+  '味醂': 'Mirin',
+  '橄榄油': 'Olive Oil',
+  '百里香': 'Thyme',
+  '香油': 'Sesame Oil',
+  '吉利丁片': 'Gelatin Sheet',
+  '冰糖': 'Rock Sugar',
+  '辣椒油': 'Chili Oil',
+  '糖浆': 'Syrup',
+  '花生油': 'Peanut Oil',
+  '猪油': 'Lard',
+  '生姜片': 'Ginger Slices',
+  '食用油': 'Cooking Oil',
+  '红糖': 'Brown Sugar',
+  '火锅底料': 'Hot Pot Base',
+  '芝麻酱': 'Sesame Paste',
+};
+
+const SEASONING_EN_TO_ZH: Record<string, string> = {};
+Object.entries(SEASONING_ZH_TO_EN).forEach(([zh, en]) => {
+  SEASONING_EN_TO_ZH[en] = zh;
+});
+
+function toZhSeasoning(name: string): string {
+  return SEASONING_EN_TO_ZH[name] || name;
+}
+
 function getSeasoningConfig(name: string): SeasoningConfig {
-  return SEASONING_MAP[name] || DEFAULT_CONFIG;
+  const zhName = toZhSeasoning(name);
+  return SEASONING_MAP[zhName] || DEFAULT_CONFIG;
 }
 
 const props = defineProps<{
@@ -156,7 +202,8 @@ const seasoningStates = ref<Map<string, 'idle' | 'sprinkling' | 'done' | 'skippe
 const seasoningOpacities = ref<Map<string, number>>(new Map());
 
 props.seasonings.forEach((s) => {
-  const multiplier = profileStore.getSeasoningMultiplier(s);
+  const zhName = toZhSeasoning(s);
+  const multiplier = profileStore.getSeasoningMultiplier(zhName);
   if (multiplier === 0) {
     seasoningStates.value.set(s, 'skipped');
     seasoningOpacities.value.set(s, 0);
@@ -179,6 +226,21 @@ const buttonText = computed(() => {
   if (allSprinkled.value) return t('steps.season.mixButton');
   return t('steps.season.waitButton');
 });
+
+const seasoningDisplayData = computed(() => {
+  return props.seasonings.map((s) => {
+    const zhName = toZhSeasoning(s);
+    return {
+      name: s,
+      zhName,
+      recommendedDosage: profileStore.getRecommendedDosage(zhName),
+    };
+  });
+});
+
+function getSeasoningDisplayData(name: string) {
+  return seasoningDisplayData.value.find((d) => d.name === name);
+}
 
 function getBottleTransform(index: number, state: string): string {
   const baseOffset = (index - 1) * 2;
@@ -634,10 +696,10 @@ onUnmounted(cleanUp);
           }"
         >
           <template v-if="seasoningStates.get(s) === 'skipped'">
-            {{ t('steps.season.skippedWithReason', { dosage: profileStore.getRecommendedDosage(s) }) }}
+            {{ t('steps.season.skippedWithReason', { dosage: getSeasoningDisplayData(s)?.recommendedDosage }) }}
           </template>
-          <template v-else-if="profileStore.getRecommendedDosage(s) !== '正常' && profileStore.getRecommendedDosage(s) !== 'Normal'">
-            {{ t('steps.season.recommended', { dosage: profileStore.getRecommendedDosage(s) }) }}
+          <template v-else-if="getSeasoningDisplayData(s)?.recommendedDosage !== '正常' && getSeasoningDisplayData(s)?.recommendedDosage !== 'Normal'">
+            {{ t('steps.season.recommended', { dosage: getSeasoningDisplayData(s)?.recommendedDosage }) }}
           </template>
           <template v-else>
             {{ t('steps.season.normalDosage') }}

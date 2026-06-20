@@ -29,6 +29,7 @@ import {
 import { useOnboardingStore } from '@/stores/onboarding';
 import ShareInviteModal from '@/components/share/ShareInviteModal.vue';
 import type { ShareCardData } from '@/data/share';
+import { useDishI18n } from '@/composables/useDishI18n';
 
 const router = useRouter();
 const store = useCookingStore();
@@ -36,6 +37,7 @@ const profileStore = useProfileStore();
 const challengesStore = useChallengesStore();
 const onboardingStore = useOnboardingStore();
 const favoritesStore = useFavoritesStore();
+const { getLocalizedDishById } = useDishI18n();
 
 const showChallengeList = ref(false);
 const showShareModal = ref(false);
@@ -534,7 +536,7 @@ function selectDish(id: string) {
             <div class="flex-1 min-w-0">
               <div class="flex items-center justify-between mb-1">
                 <h4 class="text-display text-brown-900 text-base truncate">
-                  {{ note.dishName }}
+                  {{ getLocalizedDishById(note.dishId)?.name || note.dishName }}
                 </h4>
                 <div class="flex items-center gap-0.5 shrink-0">
                   <Star

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import { ArrowLeft, User, AlertTriangle, Sparkles, RotateCcw, Volume2 } from 'lucide-vue-next';
+import { ArrowLeft, User, AlertTriangle, Sparkles, RotateCcw, Volume2, Globe } from 'lucide-vue-next';
 import {
   useProfileStore,
   ALLERGENS,
@@ -19,6 +19,7 @@ import {
   type SpeechRate,
 } from '@/stores/settings';
 import { useSpeech } from '@/composables/useSpeech';
+import LanguageSelector from '@/components/settings/LanguageSelector.vue';
 
 const router = useRouter();
 const profileStore = useProfileStore();
@@ -329,6 +330,15 @@ function handleReset() {
           </div>
         </div>
       </div>
+    </section>
+
+    <section class="mb-10 animate-fade-slide" style="animation-delay: 0.175s">
+      <div class="flex items-center gap-2 mb-4">
+        <Globe class="text-matcha-500" :size="22" />
+        <h2 class="text-display text-xl text-brown-900">语言设置</h2>
+        <span class="text-xs text-brown-800/60 ml-1">（切换界面显示语言）</span>
+      </div>
+      <LanguageSelector />
     </section>
 
     <section class="mb-10 animate-fade-slide" style="animation-delay: 0.2s">

@@ -5,10 +5,12 @@ import { ArrowLeft, Search, Star, Pencil, Trash2, BookOpen, Plus, X } from 'luci
 import { useCookingStore, type Note } from '@/stores/cooking';
 import { dishes } from '@/data/dishes';
 import NoteEditor from '@/components/NoteEditor.vue';
+import { useDishI18n } from '@/composables/useDishI18n';
 
 const router = useRouter();
 const route = useRoute();
 const store = useCookingStore();
+const { getLocalizedDishById, localizedDishes } = useDishI18n();
 
 const searchKeyword = ref('');
 const showEditor = ref(false);
@@ -184,7 +186,7 @@ function selectDishForNote(dishId: string, dishName: string, dishEmoji: string) 
             <div class="text-4xl shrink-0">{{ note.dishEmoji }}</div>
             <div class="flex-1 min-w-0">
               <div class="flex items-center justify-between mb-1">
-                <h3 class="text-display text-brown-900 truncate">{{ note.dishName }}</h3>
+                <h3 class="text-display text-brown-900 truncate">{{ getLocalizedDishById(note.dishId)?.name || note.dishName }}</h3>
                 <div class="flex items-center gap-1 shrink-0">
                   <Star
                     v-for="i in 5"
@@ -258,7 +260,7 @@ function selectDishForNote(dishId: string, dishName: string, dishEmoji: string) 
 
               <div class="grid grid-cols-2 gap-3 max-h-80 overflow-y-auto pr-1">
                 <button
-                  v-for="dish in dishes"
+                  v-for="dish in localizedDishes"
                   :key="dish.id"
                   class="flex items-center gap-3 p-3 rounded-2xl border-2 border-cream-300 bg-cream-50 hover:border-apricot-400 hover:bg-white transition-all active:scale-[0.98]"
                   @click="selectDishForNote(dish.id, dish.name, dish.emoji)"

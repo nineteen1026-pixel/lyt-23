@@ -27,6 +27,7 @@ import UnlockModal from '@/components/UnlockModal.vue';
 import NoteEditor from '@/components/NoteEditor.vue';
 import ChallengeRewardModal from '@/components/challenges/ChallengeRewardModal.vue';
 import { useOnboardingStore } from '@/stores/onboarding';
+import { useDishI18n } from '@/composables/useDishI18n';
 
 interface UnlockItem {
   type: 'decoration' | 'apron' | 'background' | 'counter';
@@ -44,9 +45,11 @@ const settingsStore = useSettingsStore();
 const onboardingStore = useOnboardingStore();
 const timerStore = useTimerStore();
 const { speak, stop, speakStep, isSpeaking, canSpeak } = useSpeech();
+const { getLocalizedDishById } = useDishI18n();
 
 const dishId = computed(() => route.params.dishId as string);
 const dish = computed(() => getDishById(dishId.value));
+const localizedDish = computed(() => dish.value ? getLocalizedDishById(dish.value.id) : undefined);
 const isSeasonalDish = computed(() => dish.value?.isSeasonal ?? false);
 const isDishAvailable = computed(() => {
   if (!dish.value) return false;
@@ -183,7 +186,8 @@ function finishCooking() {
     ? Math.round((Date.now() - cookingStartTime.value) / 1000)
     : 0;
   finishDuration.value = durationSec;
-  const shareText = `${dish.value.emoji} 今天做了一道「${dish.value.name}」！用时 ${formatCookingDuration(durationSec)}，快来试试吧～`;
+  const dishName = localizedDish.value?.name || dish.value.name;
+  const shareText = `${dish.value.emoji} 今天做了一道「${dishName}」！用时 ${formatCookingDuration(durationSec)}，快来试试吧～`;
   finishShareText.value = shareText;
   store.addCookingRecord(dish.value.id, {
     durationSeconds: durationSec,
@@ -324,7 +328,7 @@ function handleSaveNote(data: { content: string; rating: 1 | 2 | 3 | 4 | 5 }) {
         </div>
         <h2 class="text-display text-3xl text-brown-900 mb-2">这道时令菜过季啦</h2>
         <p class="text-sm text-brown-800/70 max-w-sm mb-6 leading-relaxed">
-          「{{ dish.name }}」是
+          「{{ localizedDish?.name || dish.name }}」是
           <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 font-medium">
             {{ seasonalInfo?.limitedLabel ?? '季节限定' }}
           </span>
@@ -370,7 +374,7 @@ function handleSaveNote(data: { content: string; rating: 1 | 2 | 3 | 4 | 5 }) {
         </div>
         <h2 class="text-display text-3xl text-brown-900 mb-2">再打卡几天就能解锁啦</h2>
         <p class="text-sm text-brown-800/70 max-w-sm mb-6 leading-relaxed">
-          「{{ dish.name }}」是限定菜品，需要累计打卡
+          「{{ localizedDish?.name || dish.name }}」是限定菜品，需要累计打卡
           <span class="font-medium text-apricot-600">{{ seasonalInfo?.unlockThreshold }}</span>
           天才能烹饪，继续加油～
         </p>
@@ -418,7 +422,7 @@ function handleSaveNote(data: { content: string; rating: 1 | 2 | 3 | 4 | 5 }) {
             <span class="text-2xl animate-float">{{ dish.emoji }}</span>
             <div>
               <div class="flex items-center gap-1.5">
-                <div class="text-display text-brown-900 leading-tight">{{ dish.name }}</div>
+                <div class="text-display text-brown-900 leading-tight">{{ localizedDish?.name || dish.name }}</div>
                 <span
                   v-if="isSeasonalDish && seasonalInfo?.limitedLabel"
                   class="chip !py-0.5 !px-2 bg-gradient-to-r from-amber-400 to-orange-400 text-white border border-amber-300"
@@ -497,7 +501,7 @@ function handleSaveNote(data: { content: string; rating: 1 | 2 | 3 | 4 | 5 }) {
             v-if="currentStep === 0"
             :key="'wash'"
             :dish-emoji="dish.emoji"
-            :dish-name="dish.name"
+            :dish-name="localizedDish?.name || dish.name"
             @complete="onStepComplete(0)"
           />
           <CutStep
@@ -509,7 +513,7 @@ function handleSaveNote(data: { content: string; rating: 1 | 2 | 3 | 4 | 5 }) {
           <SeasonStep
             v-else-if="currentStep === 2"
             :key="'season'"
-            :seasonings="dish.seasonings"
+            :seasonings="localizedDish?.seasonings || dish.seasonings"
             :dish-emoji="dish.emoji"
             @complete="onStepComplete(2)"
           />
@@ -529,7 +533,7 @@ function handleSaveNote(data: { content: string; rating: 1 | 2 | 3 | 4 | 5 }) {
             :key="'plate'"
             :dish-emoji="dish.emoji"
             :dish-color="dish.color"
-            :dish-name="dish.name"
+            :dish-name="localizedDish?.name || dish.name"
             @complete="(decorations: string[]) => onStepComplete(4, decorations)"
           />
         </Transition>
@@ -571,7 +575,7 @@ function handleSaveNote(data: { content: string; rating: 1 | 2 | 3 | 4 | 5 }) {
         <FinishModal
           v-if="showFinishModal && dish"
           :dish-emoji="dish.emoji"
-          :dish-name="dish.name"
+          :dish-name="localizedDish?.name || dish.name"
           :is-checked-in-today="store.isCheckedInToday"
           :duration-seconds="finishDuration"
           :share-text="finishShareText"
@@ -597,7 +601,7 @@ function handleSaveNote(data: { content: string; rating: 1 | 2 | 3 | 4 | 5 }) {
           v-if="showNoteEditor && dish"
           :visible="showNoteEditor"
           :dish-id="dish.id"
-          :dish-name="dish.name"
+          :dish-name="localizedDish?.name || dish.name"
           :dish-emoji="dish.emoji"
           @close="showNoteEditor = false"
           @save="handleSaveNote"

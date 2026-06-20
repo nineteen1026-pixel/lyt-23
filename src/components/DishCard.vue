@@ -6,6 +6,7 @@ import { ALLERGENS } from '@/stores/profile';
 import { getSeasonalDishInfo } from '@/data/seasonal';
 import { useCookingStore } from '@/stores/cooking';
 import { useFavoritesStore } from '@/stores/favorites';
+import { useDishI18n } from '@/composables/useDishI18n';
 
 const props = defineProps<{
   dish: Dish;
@@ -22,6 +23,9 @@ const emit = defineEmits<{
 
 const cookingStore = useCookingStore();
 const favoritesStore = useFavoritesStore();
+const { getLocalizedDish } = useDishI18n();
+
+const localizedDish = computed(() => getLocalizedDish(props.dish));
 
 const isFav = computed(() => favoritesStore.isFavorite(props.dish.id));
 const isPinned = computed(() => favoritesStore.isPinned(props.dish.id));
@@ -200,7 +204,7 @@ const seasonalUnlockProgress = computed(() => {
           class="text-display text-xl transition-colors"
           :class="(hasAllergen || isSeasonalLocked) ? 'text-brown-800/60' : 'text-brown-900 group-hover:text-apricot-600'"
         >
-          {{ dish.name }}
+          {{ localizedDish.name }}
         </h3>
         <div class="flex items-center gap-1 text-xs text-brown-800/60 shrink-0 mt-1">
           <Clock :size="13" />
@@ -208,7 +212,7 @@ const seasonalUnlockProgress = computed(() => {
         </div>
       </div>
       <p class="text-sm text-brown-800/70 leading-relaxed mb-3">
-        {{ dish.description }}
+        {{ localizedDish.description }}
       </p>
       <div v-if="isSeasonalLocked" class="mb-3 p-2.5 rounded-xl bg-amber-50 border border-amber-200">
         <div class="flex items-center justify-between mb-1.5">
@@ -229,7 +233,7 @@ const seasonalUnlockProgress = computed(() => {
       </div>
       <div class="flex flex-wrap gap-1.5">
         <span
-          v-for="ing in dish.ingredients"
+          v-for="ing in localizedDish.ingredients"
           :key="ing"
           class="text-xs px-2.5 py-1 rounded-full bg-cream-200/70 text-brown-800/80 border border-white/50"
           :class="{

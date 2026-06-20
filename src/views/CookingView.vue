@@ -21,6 +21,7 @@ import WashStep from '@/components/cooking/WashStep.vue';
 import CutStep from '@/components/cooking/CutStep.vue';
 import SeasonStep from '@/components/cooking/SeasonStep.vue';
 import BakeStep from '@/components/cooking/BakeStep.vue';
+import SeasonPlate from '@/components/cooking/SeasonPlate.vue';
 import FinishModal from '@/components/FinishModal.vue';
 import UnlockModal from '@/components/UnlockModal.vue';
 import NoteEditor from '@/components/NoteEditor.vue';
@@ -64,7 +65,7 @@ const isLockedByThreshold = computed(() => {
 });
 
 const currentStep = ref(0);
-const stepCompleted = ref([false, false, false, false]);
+const stepCompleted = ref([false, false, false, false, false]);
 const showFinishModal = ref(false);
 const showUnlockModal = ref(false);
 const pendingUnlockItems = ref<UnlockItem[]>([]);
@@ -158,7 +159,7 @@ onMounted(() => {
 
 function onStepComplete(stepIndex: number) {
   stepCompleted.value[stepIndex] = true;
-  if (stepIndex < 3) {
+  if (stepIndex < 4) {
     setTimeout(() => {
       currentStep.value = stepIndex + 1;
     }, 800);
@@ -206,7 +207,7 @@ function formatCookingDuration(seconds: number): string {
 }
 
 function goNext() {
-  if (stepCompleted.value[currentStep.value] && currentStep.value < 3) {
+  if (stepCompleted.value[currentStep.value] && currentStep.value < 4) {
     currentStep.value += 1;
   }
 }
@@ -508,7 +509,7 @@ function handleSaveNote(data: { content: string; rating: 1 | 2 | 3 | 4 | 5 }) {
             @complete="onStepComplete(2)"
           />
           <BakeStep
-            v-else
+            v-else-if="currentStep === 3"
             :key="'bake'"
             :dish-emoji="dish.emoji"
             :dish-color="dish.color"
@@ -517,6 +518,14 @@ function handleSaveNote(data: { content: string; rating: 1 | 2 | 3 | 4 | 5 }) {
             :linked-dish-id="dishId"
             @complete="onStepComplete(3)"
             @link-timer="linkBakeTimerToGlobal"
+          />
+          <SeasonPlate
+            v-else
+            :key="'plate'"
+            :dish-emoji="dish.emoji"
+            :dish-color="dish.color"
+            :dish-name="dish.name"
+            @complete="onStepComplete(4)"
           />
         </Transition>
       </div>
@@ -533,7 +542,7 @@ function handleSaveNote(data: { content: string; rating: 1 | 2 | 3 | 4 | 5 }) {
         </button>
         <div v-else />
         <button
-          v-if="currentStep < 3"
+          v-if="currentStep < 4"
           class="btn-primary flex items-center gap-2"
           :disabled="!stepCompleted[currentStep]"
           @click="goNext"
@@ -544,7 +553,7 @@ function handleSaveNote(data: { content: string; rating: 1 | 2 | 3 | 4 | 5 }) {
         <button
           v-else
           class="btn-primary flex items-center gap-2 !bg-matcha-500 hover:!bg-matcha-600"
-          :disabled="cookingFinished || !stepCompleted[3]"
+          :disabled="cookingFinished || !stepCompleted[4]"
           data-onboarding="finish-btn"
           @click="finishCooking"
         >

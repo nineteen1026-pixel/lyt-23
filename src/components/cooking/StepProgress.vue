@@ -17,6 +17,7 @@ const props = withDefaults(defineProps<{
     { id: 'cut', name: '切配', icon: '🔪' },
     { id: 'season', name: '调味', icon: '🧂' },
     { id: 'bake', name: '烘烤', icon: '🔥' },
+    { id: 'plate', name: '盛盘', icon: '🍽️' },
   ],
 });
 

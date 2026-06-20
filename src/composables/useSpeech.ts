@@ -66,6 +66,7 @@ export function useSpeech() {
       '第二步，切菜环节。把食材切好备用。',
       '第三步，调味环节。根据口味添加适量调味料。',
       '第四步，烹饪环节。耐心等待美食出炉。',
+      dishName ? `第五步，盛盘装饰。把${dishName}精心摆放到盘子里吧！` : '第五步，盛盘装饰。把美食精心摆放到盘子里吧！',
     ];
     const text = stepTexts[stepIndex] || '';
     if (text) {

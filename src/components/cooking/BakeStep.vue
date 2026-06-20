@@ -1,20 +1,25 @@
 <script setup lang="ts">
-import { ref, computed, onUnmounted } from 'vue';
+import { ref, computed, watch, onUnmounted } from 'vue';
+import { useTimerStore } from '@/stores/timer';
 
 const props = withDefaults(defineProps<{
   dishEmoji: string;
   dishColor: string;
   time?: number;
   hasLinkedTimer?: boolean;
+  linkedDishId?: string;
 }>(), {
   time: 15,
   hasLinkedTimer: false,
+  linkedDishId: '',
 });
 
 const emit = defineEmits<{
   (e: 'complete'): void;
   (e: 'linkTimer'): void;
 }>();
+
+const timerStore = useTimerStore();
 
 type BakeStage = 'idle' | 'inserting' | 'closing' | 'baking' | 'done';
 
@@ -29,19 +34,55 @@ let bakeInterval: number | null = null;
 const BAKE_DURATION = 4000;
 const TARGET_TEMP = 180;
 
+const linkedTimer = computed(() => {
+  if (!props.hasLinkedTimer || !props.linkedDishId) return null;
+  return timerStore.findLinkedTimer(props.linkedDishId, 'bake') ?? null;
+});
+
+const isLinkedBaking = computed(() =>
+  linkedTimer.value !== null && (linkedTimer.value.status === 'running' || linkedTimer.value.status === 'paused'),
+);
+
 const displayTime = computed(() => {
+  if (isLinkedBaking.value && linkedTimer.value) {
+    const totalSec = linkedTimer.value.remainingSeconds;
+    const hrs = Math.floor(totalSec / 3600);
+    const mins = Math.floor((totalSec % 3600) / 60);
+    const secs = totalSec % 60;
+    if (hrs > 0) return `${hrs}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  }
   const totalSeconds = Math.round((progress.value / 100) * props.time);
   const mins = Math.floor(totalSeconds / 60);
   const secs = totalSeconds % 60;
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 });
 
+const effectiveProgress = computed(() => {
+  if (isLinkedBaking.value && linkedTimer.value) {
+    const dur = linkedTimer.value.durationSeconds;
+    if (dur <= 0) return 0;
+    return Math.round(((dur - linkedTimer.value.remainingSeconds) / dur) * 100);
+  }
+  return progress.value;
+});
+
+const effectiveTemperature = computed(() => {
+  if (isLinkedBaking.value && linkedTimer.value) {
+    const dur = linkedTimer.value.durationSeconds;
+    if (dur <= 0) return 25;
+    const ratio = (dur - linkedTimer.value.remainingSeconds) / dur;
+    return Math.round(25 + ratio * (TARGET_TEMP - 25));
+  }
+  return temperature.value;
+});
+
 const temperaturePercent = computed(() => {
-  return Math.min(100, ((temperature.value - 25) / (TARGET_TEMP - 25)) * 100);
+  return Math.min(100, ((effectiveTemperature.value - 25) / (TARGET_TEMP - 25)) * 100);
 });
 
 const temperatureColor = computed(() => {
-  const t = temperature.value;
+  const t = effectiveTemperature.value;
   if (t < 80) return '#FFD166';
   if (t < 130) return '#FF9F43';
   if (t < 160) return '#FF6B35';
@@ -93,6 +134,11 @@ function startCloseDoor() {
 
 function startBaking() {
   stage.value = 'baking';
+
+  if (isLinkedBaking.value) {
+    return;
+  }
+
   const startTime = Date.now();
 
   bakeInterval = window.setInterval(() => {
@@ -119,6 +165,20 @@ function finishBaking() {
     doorOpen.value = true;
   }, 400);
 }
+
+watch(
+  () => linkedTimer.value?.status,
+  (timerStatus) => {
+    if (!linkedTimer.value) return;
+    if (timerStatus === 'done' && stage.value === 'baking') {
+      if (bakeInterval) {
+        clearInterval(bakeInterval);
+        bakeInterval = null;
+      }
+      finishBaking();
+    }
+  },
+);
 
 const steamItems = [0, 1, 2, 3, 4];
 
@@ -300,7 +360,7 @@ onUnmounted(cleanUp);
                 </span>
               </div>
               <span class="text-sm font-bold text-gray-300 tabular-nums">
-                {{ temperature }}°C
+                {{ effectiveTemperature }}°C
               </span>
             </div>
 
@@ -525,7 +585,7 @@ onUnmounted(cleanUp);
       <div>
         <div class="flex justify-between text-sm text-brown-800/70 mb-2">
           <span>烘烤进度</span>
-          <span class="font-medium text-apricot-600">{{ progress }}%</span>
+          <span class="font-medium text-apricot-600">{{ effectiveProgress }}%</span>
         </div>
         <div
           class="h-4 bg-cream-200 rounded-full overflow-hidden border-2 border-white shadow-inner"
@@ -533,7 +593,7 @@ onUnmounted(cleanUp);
           <div
             class="h-full rounded-full transition-all duration-150 ease-out relative overflow-hidden"
             :style="{
-              width: `${progress}%`,
+              width: `${effectiveProgress}%`,
               background: stage === 'done'
                 ? 'linear-gradient(90deg, #6EE7B7, #34D399, #6EE7B7)'
                 : 'linear-gradient(90deg, #FFD166, #FF9F43, #FF6B35, #E63946)',
@@ -552,7 +612,7 @@ onUnmounted(cleanUp);
       <div>
         <div class="flex justify-between text-sm text-brown-800/70 mb-2">
           <span>炉内温度</span>
-          <span class="font-medium" :style="{ color: temperatureColor }">{{ temperature }}°C</span>
+          <span class="font-medium" :style="{ color: temperatureColor }">{{ effectiveTemperature }}°C</span>
         </div>
         <div
           class="h-4 bg-cream-200 rounded-full overflow-hidden border-2 border-white shadow-inner"

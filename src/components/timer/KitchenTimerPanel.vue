@@ -2,13 +2,10 @@
 import { ref, computed } from 'vue';
 import { Plus, Trash2, Timer } from 'lucide-vue-next';
 import { useTimerStore } from '@/stores/timer';
-import { useKitchenTimer } from '@/composables/useKitchenTimer';
 import TimerCard from './TimerCard.vue';
 import TimerCreateForm from './TimerCreateForm.vue';
-import TimerAlertToast from './TimerAlertToast.vue';
 
 const store = useTimerStore();
-useKitchenTimer();
 
 const showCreateForm = ref(false);
 
@@ -31,8 +28,6 @@ function handleCreated(): void {
 
 <template>
   <div>
-    <TimerAlertToast />
-
     <div class="flex items-center justify-between mb-6">
       <div class="flex items-center gap-3">
         <div class="w-11 h-11 rounded-2xl bg-apricot-500/15 flex items-center justify-center text-apricot-500">

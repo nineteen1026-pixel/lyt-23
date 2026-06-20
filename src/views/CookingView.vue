@@ -7,7 +7,6 @@ import { useCookingStore, type UnlockResult } from '@/stores/cooking';
 import { useChallengesStore } from '@/stores/challenges';
 import { useSettingsStore } from '@/stores/settings';
 import { useTimerStore } from '@/stores/timer';
-import { useKitchenTimer } from '@/composables/useKitchenTimer';
 import { unlocks, type Decoration, type Apron } from '@/data/unlocks';
 import type { ChallengeBadge } from '@/data/challenges';
 import {
@@ -26,7 +25,6 @@ import FinishModal from '@/components/FinishModal.vue';
 import UnlockModal from '@/components/UnlockModal.vue';
 import NoteEditor from '@/components/NoteEditor.vue';
 import ChallengeRewardModal from '@/components/challenges/ChallengeRewardModal.vue';
-import TimerAlertToast from '@/components/timer/TimerAlertToast.vue';
 import { useOnboardingStore } from '@/stores/onboarding';
 
 interface UnlockItem {
@@ -44,7 +42,6 @@ const challengesStore = useChallengesStore();
 const settingsStore = useSettingsStore();
 const onboardingStore = useOnboardingStore();
 const timerStore = useTimerStore();
-useKitchenTimer();
 const { speak, stop, speakStep, isSpeaking, canSpeak } = useSpeech();
 
 const dishId = computed(() => route.params.dishId as string);
@@ -518,6 +515,7 @@ function handleSaveNote(data: { content: string; rating: 1 | 2 | 3 | 4 | 5 }) {
             :dish-color="dish.color"
             :time="dish.time"
             :has-linked-timer="hasLinkedBakeTimer"
+            :linked-dish-id="dishId"
             @complete="onStepComplete(3)"
             @link-timer="linkBakeTimerToGlobal"
           />
@@ -598,8 +596,6 @@ function handleSaveNote(data: { content: string; rating: 1 | 2 | 3 | 4 | 5 }) {
           @close="handleCloseChallengeReward"
         />
       </Transition>
-
-      <TimerAlertToast />
     </template>
   </div>
 </template>

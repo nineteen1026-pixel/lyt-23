@@ -78,18 +78,6 @@ function handleMoveDown(dishId: string, e: Event) {
   favoritesStore.moveDown(dishId);
 }
 
-function isFirstOfFavorites(dishId: string): boolean {
-  const favoriteList = sortedDishes.value.filter((item) => favoritesStore.isFavorite(item.dish.id));
-  if (favoriteList.length === 0) return true;
-  return favoriteList[0].dish.id === dishId;
-}
-
-function isLastOfFavorites(dishId: string): boolean {
-  const favoriteList = sortedDishes.value.filter((item) => favoritesStore.isFavorite(item.dish.id));
-  if (favoriteList.length === 0) return true;
-  return favoriteList[favoriteList.length - 1].dish.id === dishId;
-}
-
 onMounted(() => {
   challengesStore.resetExpiredChallenges();
   if (!onboardingStore.isCompleted) {
@@ -690,7 +678,7 @@ function selectDish(id: string) {
           >
             <button
               class="w-8 h-8 rounded-full bg-white shadow-md border border-cream-200 flex items-center justify-center text-brown-700 hover:bg-cream-50 hover:shadow-lg transition-all active:scale-90 disabled:opacity-30 disabled:cursor-not-allowed"
-              :disabled="idx === 0"
+              :disabled="favoritesStore.isFirstInPinned(item.dish.id)"
               title="上移"
               @click="handleMoveUp(item.dish.id, $event)"
             >
@@ -698,7 +686,7 @@ function selectDish(id: string) {
             </button>
             <button
               class="w-8 h-8 rounded-full bg-white shadow-md border border-cream-200 flex items-center justify-center text-brown-700 hover:bg-cream-50 hover:shadow-lg transition-all active:scale-90 disabled:opacity-30 disabled:cursor-not-allowed"
-              :disabled="idx === pinnedDishes.length - 1"
+              :disabled="favoritesStore.isLastInPinned(item.dish.id)"
               title="下移"
               @click="handleMoveDown(item.dish.id, $event)"
             >
@@ -836,7 +824,7 @@ function selectDish(id: string) {
         >
           <button
             class="w-8 h-8 rounded-full bg-white shadow-md border border-cream-200 flex items-center justify-center text-brown-700 hover:bg-cream-50 hover:shadow-lg transition-all active:scale-90 disabled:opacity-30 disabled:cursor-not-allowed"
-            :disabled="isFirstOfFavorites(item.dish.id)"
+            :disabled="favoritesStore.isFirstInNonPinned(item.dish.id)"
             title="上移"
             @click="handleMoveUp(item.dish.id, $event)"
           >
@@ -844,7 +832,7 @@ function selectDish(id: string) {
           </button>
           <button
             class="w-8 h-8 rounded-full bg-white shadow-md border border-cream-200 flex items-center justify-center text-brown-700 hover:bg-cream-50 hover:shadow-lg transition-all active:scale-90 disabled:opacity-30 disabled:cursor-not-allowed"
-            :disabled="isLastOfFavorites(item.dish.id)"
+            :disabled="favoritesStore.isLastInNonPinned(item.dish.id)"
             title="下移"
             @click="handleMoveDown(item.dish.id, $event)"
           >

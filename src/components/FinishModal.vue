@@ -7,6 +7,7 @@ const props = defineProps<{
   isCheckedInToday: boolean;
   durationSeconds?: number;
   shareText?: string;
+  plateDecorations?: string[];
 }>();
 
 const emit = defineEmits<{
@@ -114,6 +115,23 @@ async function handleCopy() {
             <p class="text-display text-xl text-apricot-600 mb-4">
               完成啦！🍽️
             </p>
+
+            <div
+              v-if="plateDecorations && plateDecorations.length > 0"
+              class="flex items-center justify-center gap-2 mb-4 px-4 py-2 rounded-full bg-gradient-to-r from-matcha-50 to-cream-50 border border-matcha-200 animate-fade-slide"
+            >
+              <span class="text-xs text-matcha-700 font-medium">盛盘装饰</span>
+              <div class="flex items-center gap-1">
+                <span
+                  v-for="(deco, i) in plateDecorations"
+                  :key="'finish-deco-' + i"
+                  class="text-lg animate-pop-in"
+                  :style="{ animationDelay: `${i * 0.1}s` }"
+                >
+                  {{ deco }}
+                </span>
+              </div>
+            </div>
 
             <div
               v-if="durationSeconds != null && durationSeconds > 0"

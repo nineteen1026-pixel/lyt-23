@@ -77,6 +77,7 @@ const cookingStartTime = ref<number | null>(null);
 const finishDuration = ref(0);
 const finishShareText = ref('');
 const cookingFinished = ref(false);
+const plateDecorations = ref<string[]>([]);
 
 const hasLinkedBakeTimer = computed(() => {
   if (!dish.value) return false;
@@ -150,6 +151,7 @@ function replayStepSpeech() {
 
 onMounted(() => {
   cookingStartTime.value = Date.now();
+  plateDecorations.value = [];
   if (!onboardingStore.isCompleted && dish.value && isDishAvailable.value && !isLockedByThreshold.value) {
     setTimeout(() => {
       onboardingStore.startFlow('cooking');
@@ -157,8 +159,11 @@ onMounted(() => {
   }
 });
 
-function onStepComplete(stepIndex: number) {
+function onStepComplete(stepIndex: number, decorations?: string[]) {
   stepCompleted.value[stepIndex] = true;
+  if (stepIndex === 4 && decorations) {
+    plateDecorations.value = decorations;
+  }
   if (stepIndex < 4) {
     setTimeout(() => {
       currentStep.value = stepIndex + 1;
@@ -525,7 +530,7 @@ function handleSaveNote(data: { content: string; rating: 1 | 2 | 3 | 4 | 5 }) {
             :dish-emoji="dish.emoji"
             :dish-color="dish.color"
             :dish-name="dish.name"
-            @complete="onStepComplete(4)"
+            @complete="(decorations: string[]) => onStepComplete(4, decorations)"
           />
         </Transition>
       </div>
@@ -570,6 +575,7 @@ function handleSaveNote(data: { content: string; rating: 1 | 2 | 3 | 4 | 5 }) {
           :is-checked-in-today="store.isCheckedInToday"
           :duration-seconds="finishDuration"
           :share-text="finishShareText"
+          :plate-decorations="plateDecorations"
           @check-in="handleCheckIn"
           @back-home="handleBackHome"
           @cook-more="handleCookMore"

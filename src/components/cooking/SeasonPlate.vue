@@ -8,7 +8,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'complete'): void;
+  (e: 'complete', decorations: string[]): void;
 }>();
 
 type PlateStage = 'idle' | 'grabbing' | 'placing' | 'decorating' | 'done';
@@ -52,7 +52,7 @@ function handleMainAction() {
       }
       break;
     case 'done':
-      emit('complete');
+      emit('complete', plateDecorations.value);
       break;
   }
 }
@@ -304,6 +304,7 @@ const plateDecorations = computed(() => {
       <div
         v-if="stage === 'decorating'"
         class="text-center"
+        data-onboarding="plate-tip"
       >
         <div class="text-xs text-brown-800/60 mb-2">
           点缀装饰 ({{ decorationCount }}/3)

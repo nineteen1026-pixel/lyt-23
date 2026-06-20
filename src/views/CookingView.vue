@@ -113,6 +113,7 @@ watch(
       speakStep(step, dish.value.name);
     }
   },
+  { immediate: true },
 );
 
 function toggleSpeechGuide() {

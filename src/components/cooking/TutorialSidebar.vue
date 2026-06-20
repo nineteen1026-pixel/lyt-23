@@ -106,37 +106,63 @@ function getImportanceStyle(importance: StepTip['importance']) {
           当前步骤
         </span>
       </div>
-      <div class="space-y-2">
+      <div class="space-y-3">
         <div
           v-for="tip in currentStepTips"
           :key="tip.id"
-          class="rounded-xl p-3 border-l-4 transition-all hover:shadow-md"
+          class="tip-card rounded-xl overflow-hidden border-l-4 transition-all hover:shadow-lg hover:-translate-y-0.5"
           :class="[getImportanceStyle(tip.importance).bg, getImportanceStyle(tip.importance).border]"
         >
-          <div class="flex items-start gap-2.5">
-            <div class="shrink-0">
-              <span v-if="tip.emoji" class="text-xl">{{ tip.emoji }}</span>
-              <div
-                v-else
-                class="w-8 h-8 rounded-full flex items-center justify-center"
-                :class="getImportanceStyle(tip.importance).icon"
-              >
-                <Info :size="14" class="text-white" />
-              </div>
-            </div>
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-2 mb-1">
-                <h4 class="text-sm font-bold text-brown-900">{{ tip.title }}</h4>
-                <span
-                  class="text-[9px] font-bold px-1.5 py-0.5 rounded-full text-white shrink-0"
-                  :class="getImportanceStyle(tip.importance).labelBg"
+          <div
+            v-if="tip.illustration"
+            class="tip-illustration h-20 flex items-center justify-center relative overflow-hidden"
+            :style="{
+              background: `linear-gradient(135deg, ${tip.illustration.gradientFrom}, ${tip.illustration.gradientTo})`,
+            }"
+          >
+            <div
+              v-if="tip.illustration.pattern === 'dots'"
+              class="absolute inset-0 opacity-20"
+              :style="{
+                backgroundImage: `radial-gradient(circle, white 2px, transparent 2px)`,
+                backgroundSize: '12px 12px',
+              }"
+            />
+            <div
+              v-else-if="tip.illustration.pattern === 'stripes'"
+              class="absolute inset-0 opacity-15"
+              :style="{
+                backgroundImage: 'repeating-linear-gradient(45deg, white, white 4px, transparent 4px, transparent 8px)',
+              }"
+            />
+            <span class="text-4xl relative z-10 drop-shadow-lg">{{ tip.illustration.emoji }}</span>
+          </div>
+          <div class="p-3">
+            <div class="flex items-start gap-2.5">
+              <div v-if="!tip.illustration" class="shrink-0">
+                <span v-if="tip.emoji" class="text-xl">{{ tip.emoji }}</span>
+                <div
+                  v-else
+                  class="w-8 h-8 rounded-full flex items-center justify-center"
+                  :class="getImportanceStyle(tip.importance).icon"
                 >
-                  {{ getImportanceStyle(tip.importance).label }}
-                </span>
+                  <Info :size="14" class="text-white" />
+                </div>
               </div>
-              <p class="text-[12px] text-brown-800/75 leading-relaxed">
-                {{ tip.content }}
-              </p>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-1.5">
+                  <h4 class="text-sm font-bold text-brown-900">{{ tip.title }}</h4>
+                  <span
+                    class="text-[9px] font-bold px-1.5 py-0.5 rounded-full text-white shrink-0"
+                    :class="getImportanceStyle(tip.importance).labelBg"
+                  >
+                    {{ getImportanceStyle(tip.importance).label }}
+                  </span>
+                </div>
+                <p class="text-[12px] text-brown-800/75 leading-relaxed">
+                  {{ tip.content }}
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -205,15 +231,41 @@ function getImportanceStyle(importance: StepTip['importance']) {
         <div
           v-for="tip in tutorial.proTips"
           :key="tip.id"
-          class="rounded-xl p-3 bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-100"
+          class="pro-tip-card rounded-xl overflow-hidden bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-100 transition-all hover:shadow-lg hover:-translate-y-0.5"
         >
-          <div class="flex items-start gap-2.5">
-            <span class="text-xl shrink-0">{{ tip.emoji || '💫' }}</span>
-            <div class="flex-1 min-w-0">
-              <h4 class="text-sm font-bold text-[#6B21A8] mb-1">{{ tip.title }}</h4>
-              <p class="text-[12px] text-brown-800/75 leading-relaxed">
-                {{ tip.content }}
-              </p>
+          <div
+            v-if="tip.illustration"
+            class="h-16 flex items-center justify-center relative overflow-hidden"
+            :style="{
+              background: `linear-gradient(135deg, ${tip.illustration.gradientFrom}, ${tip.illustration.gradientTo})`,
+            }"
+          >
+            <div
+              v-if="tip.illustration.pattern === 'dots'"
+              class="absolute inset-0 opacity-20"
+              :style="{
+                backgroundImage: `radial-gradient(circle, white 2px, transparent 2px)`,
+                backgroundSize: '12px 12px',
+              }"
+            />
+            <div
+              v-else-if="tip.illustration.pattern === 'stripes'"
+              class="absolute inset-0 opacity-15"
+              :style="{
+                backgroundImage: 'repeating-linear-gradient(45deg, white, white 4px, transparent 4px, transparent 8px)',
+              }"
+            />
+            <span class="text-3xl relative z-10 drop-shadow-md">{{ tip.illustration.emoji }}</span>
+          </div>
+          <div class="p-3">
+            <div class="flex items-start gap-2.5">
+              <span v-if="!tip.illustration" class="text-xl shrink-0">{{ tip.emoji || '💫' }}</span>
+              <div class="flex-1 min-w-0">
+                <h4 class="text-sm font-bold text-[#6B21A8] mb-1">{{ tip.title }}</h4>
+                <p class="text-[12px] text-brown-800/75 leading-relaxed">
+                  {{ tip.content }}
+                </p>
+              </div>
             </div>
           </div>
         </div>

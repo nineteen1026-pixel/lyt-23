@@ -1,17 +1,17 @@
-import { computed } from 'vue';
 import type { Dish } from '@/data/dishes';
 import { getIngredientNutrition, type DishNutrition } from '@/data/nutrition';
 
 export function useNutrition() {
   function calculateDishNutrition(dish: Dish): DishNutrition {
     const allIngredients = [...dish.ingredients, ...dish.seasonings];
+    const uniqueIngredients = Array.from(new Set(allIngredients));
     
     let totalCalories = 0;
     let totalProtein = 0;
     let totalCarbs = 0;
     let totalFat = 0;
 
-    const ingredients = allIngredients.map((name) => {
+    const ingredients = uniqueIngredients.map((name) => {
       const nutrition = getIngredientNutrition(name);
       if (!nutrition) {
         return {

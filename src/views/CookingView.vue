@@ -28,6 +28,7 @@ import NoteEditor from '@/components/NoteEditor.vue';
 import ChallengeRewardModal from '@/components/challenges/ChallengeRewardModal.vue';
 import { useOnboardingStore } from '@/stores/onboarding';
 import { useDishI18n } from '@/composables/useDishI18n';
+import TutorialSidebar from '@/components/cooking/TutorialSidebar.vue';
 
 interface UnlockItem {
   type: 'decoration' | 'apron' | 'background' | 'counter';
@@ -312,7 +313,7 @@ function handleSaveNote(data: { content: string; rating: 1 | 2 | 3 | 4 | 5 }) {
 </script>
 
 <template>
-  <div v-if="dish" class="container max-w-3xl mx-auto px-4 pt-6">
+  <div v-if="dish" class="container max-w-7xl mx-auto px-4 pt-6">
     <template v-if="!isDishAvailable">
       <div class="flex flex-col items-center justify-center py-16 animate-fade-slide text-center">
         <div class="relative mb-6">
@@ -491,84 +492,96 @@ function handleSaveNote(data: { content: string; rating: 1 | 2 | 3 | 4 | 5 }) {
         </div>
       </header>
 
-      <div class="mb-8 animate-fade-slide" style="animation-delay: 0.05s" data-onboarding="step-progress">
-        <StepProgress :current-step="currentStep" />
-      </div>
+      <div class="flex flex-col-reverse lg:flex-row lg:items-start gap-6">
+        <div class="flex-1 max-w-3xl mx-auto w-full lg:mx-0">
+          <div class="mb-8 animate-fade-slide" style="animation-delay: 0.05s" data-onboarding="step-progress">
+            <StepProgress :current-step="currentStep" />
+          </div>
 
-      <div class="animate-fade-slide" style="animation-delay: 0.1s">
-        <Transition name="step" mode="out-in">
-          <WashStep
-            v-if="currentStep === 0"
-            :key="'wash'"
-            :dish-emoji="dish.emoji"
-            :dish-name="localizedDish?.name || dish.name"
-            @complete="onStepComplete(0)"
-          />
-          <CutStep
-            v-else-if="currentStep === 1"
-            :key="'cut'"
-            :dish-emoji="dish.emoji"
-            @complete="onStepComplete(1)"
-          />
-          <SeasonStep
-            v-else-if="currentStep === 2"
-            :key="'season'"
-            :seasonings="localizedDish?.seasonings || dish.seasonings"
-            :dish-emoji="dish.emoji"
-            @complete="onStepComplete(2)"
-          />
-          <BakeStep
-            v-else-if="currentStep === 3"
-            :key="'bake'"
-            :dish-emoji="dish.emoji"
-            :dish-color="dish.color"
-            :time="dish.time"
-            :has-linked-timer="hasLinkedBakeTimer"
-            :linked-dish-id="dishId"
-            @complete="onStepComplete(3)"
-            @link-timer="linkBakeTimerToGlobal"
-          />
-          <SeasonPlate
-            v-else
-            :key="'plate'"
-            :dish-emoji="dish.emoji"
-            :dish-color="dish.color"
-            :dish-name="localizedDish?.name || dish.name"
-            @complete="(decorations: string[]) => onStepComplete(4, decorations)"
-          />
-        </Transition>
-      </div>
+          <div class="animate-fade-slide" style="animation-delay: 0.1s">
+            <Transition name="step" mode="out-in">
+              <WashStep
+                v-if="currentStep === 0"
+                :key="'wash'"
+                :dish-emoji="dish.emoji"
+                :dish-name="localizedDish?.name || dish.name"
+                @complete="onStepComplete(0)"
+              />
+              <CutStep
+                v-else-if="currentStep === 1"
+                :key="'cut'"
+                :dish-emoji="dish.emoji"
+                @complete="onStepComplete(1)"
+              />
+              <SeasonStep
+                v-else-if="currentStep === 2"
+                :key="'season'"
+                :seasonings="localizedDish?.seasonings || dish.seasonings"
+                :dish-emoji="dish.emoji"
+                @complete="onStepComplete(2)"
+              />
+              <BakeStep
+                v-else-if="currentStep === 3"
+                :key="'bake'"
+                :dish-emoji="dish.emoji"
+                :dish-color="dish.color"
+                :time="dish.time"
+                :has-linked-timer="hasLinkedBakeTimer"
+                :linked-dish-id="dishId"
+                @complete="onStepComplete(3)"
+                @link-timer="linkBakeTimerToGlobal"
+              />
+              <SeasonPlate
+                v-else
+                :key="'plate'"
+                :dish-emoji="dish.emoji"
+                :dish-color="dish.color"
+                :dish-name="localizedDish?.name || dish.name"
+                @complete="(decorations: string[]) => onStepComplete(4, decorations)"
+              />
+            </Transition>
+          </div>
 
-      <div class="flex justify-between mt-6">
-        <button
-          v-if="currentStep > 0"
-          class="btn-secondary flex items-center gap-2"
-          :disabled="!stepCompleted[currentStep - 1]"
-          @click="goPrev"
-        >
-          <ChevronLeft :size="18" />
-          <span>上一步</span>
-        </button>
-        <div v-else />
-        <button
-          v-if="currentStep < 4"
-          class="btn-primary flex items-center gap-2"
-          :disabled="!stepCompleted[currentStep]"
-          @click="goNext"
-        >
-          <span>下一步</span>
-          <ChevronRight :size="18" />
-        </button>
-        <button
-          v-else
-          class="btn-primary flex items-center gap-2 !bg-matcha-500 hover:!bg-matcha-600"
-          :disabled="cookingFinished || !stepCompleted[4]"
-          data-onboarding="finish-btn"
-          @click="finishCooking"
-        >
-          <Home :size="18" />
-          <span>完成烹饪</span>
-        </button>
+          <div class="flex justify-between mt-6">
+            <button
+              v-if="currentStep > 0"
+              class="btn-secondary flex items-center gap-2"
+              :disabled="!stepCompleted[currentStep - 1]"
+              @click="goPrev"
+            >
+              <ChevronLeft :size="18" />
+              <span>上一步</span>
+            </button>
+            <div v-else />
+            <button
+              v-if="currentStep < 4"
+              class="btn-primary flex items-center gap-2"
+              :disabled="!stepCompleted[currentStep]"
+              @click="goNext"
+            >
+              <span>下一步</span>
+              <ChevronRight :size="18" />
+            </button>
+            <button
+              v-else
+              class="btn-primary flex items-center gap-2 !bg-matcha-500 hover:!bg-matcha-600"
+              :disabled="cookingFinished || !stepCompleted[4]"
+              data-onboarding="finish-btn"
+              @click="finishCooking"
+            >
+              <Home :size="18" />
+              <span>完成烹饪</span>
+            </button>
+          </div>
+        </div>
+
+        <TutorialSidebar
+          class="animate-fade-slide"
+          style="animation-delay: 0.15s"
+          :dish-id="dishId"
+          :current-step="currentStep"
+          :dish-color="dish.color"
+        />
       </div>
 
       <Transition name="fade">

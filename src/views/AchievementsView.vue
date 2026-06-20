@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import { ArrowLeft, ChefHat, Sparkles, Target, Award, Flame, Beef, Wheat, Droplet, TrendingUp, Calendar, CalendarRange, BarChart3 } from 'lucide-vue-next';
+import { ArrowLeft, ChefHat, Sparkles, Target, Award, Flame, Beef, Wheat, Droplet, TrendingUp, Calendar, CalendarRange, BarChart3, Share2 } from 'lucide-vue-next';
 import CheckInCalendar from '@/components/achievements/CheckInCalendar.vue';
 import UnlockProgress from '@/components/achievements/UnlockProgress.vue';
 import DecorationGrid from '@/components/achievements/DecorationGrid.vue';
 import ApronSelector from '@/components/achievements/ApronSelector.vue';
 import ThemeSelector from '@/components/achievements/ThemeSelector.vue';
 import ChallengeList from '@/components/challenges/ChallengeList.vue';
+import ShareInviteModal from '@/components/share/ShareInviteModal.vue';
 import { useCookingStore } from '@/stores/cooking';
 import { useChallengesStore } from '@/stores/challenges';
 import { challenges } from '@/data/challenges';
+import type { ShareCardData } from '@/data/share';
 import { computed, onMounted, ref } from 'vue';
 import { useOnboardingStore } from '@/stores/onboarding';
 import { useNutrition } from '@/composables/useNutrition';
@@ -18,6 +20,7 @@ const router = useRouter();
 const store = useCookingStore();
 const challengesStore = useChallengesStore();
 const onboardingStore = useOnboardingStore();
+const showShareModal = ref(false);
 const { formatNutrientValue } = useNutrition();
 
 type NutritionPeriod = 'today' | 'week' | 'month' | 'total';
@@ -87,19 +90,30 @@ function handleStartChallenge(challengeId: string) {
             每一次打卡都是对生活的认真 ✿ 继续解锁更可爱的厨房吧！
           </p>
         </div>
-        <div
-          v-if="store.totalDays > 0"
-          class="card-soft px-5 py-3 flex items-center gap-3 animate-float"
-        >
-          <div class="w-12 h-12 rounded-full bg-gradient-to-br from-apricot-400 to-apricot-600 flex items-center justify-center shadow-soft">
-            <Sparkles :size="22" class="text-white" />
-          </div>
-          <div>
-            <div class="text-[11px] text-brown-800/60 leading-none">厨房等级</div>
-            <div class="text-display text-2xl text-apricot-600 leading-tight">
-              Lv.{{ Math.floor(store.totalDays / 10) + 1 }}
+        <div class="flex items-center gap-3">
+          <div
+            v-if="store.totalDays > 0"
+            class="card-soft px-5 py-3 flex items-center gap-3 animate-float"
+          >
+            <div class="w-12 h-12 rounded-full bg-gradient-to-br from-apricot-400 to-apricot-600 flex items-center justify-center shadow-soft">
+              <Sparkles :size="22" class="text-white" />
+            </div>
+            <div>
+              <div class="text-[11px] text-brown-800/60 leading-none">厨房等级</div>
+              <div class="text-display text-2xl text-apricot-600 leading-tight">
+                Lv.{{ Math.floor(store.totalDays / 10) + 1 }}
+              </div>
             </div>
           </div>
+          <button
+            class="card-soft px-4 py-3 hover:shadow-soft transition-all active:scale-95 flex items-center gap-2"
+            @click="showShareModal = true"
+          >
+            <div class="w-10 h-10 rounded-full bg-rose-500/15 flex items-center justify-center text-rose-500">
+              <Share2 :size="18" :stroke-width="2.2" />
+            </div>
+            <span class="text-sm font-medium text-brown-800">分享成就</span>
+          </button>
         </div>
       </div>
     </header>
@@ -299,4 +313,12 @@ function handleStartChallenge(challengeId: string) {
       好好吃饭，慢慢生活 · 累计 {{ store.totalDays }} 天的烟火气 🧡
     </footer>
   </div>
+
+  <Transition name="fade">
+    <ShareInviteModal
+      v-if="showShareModal"
+      @close="showShareModal = false"
+      @share="(_data: ShareCardData) => showShareModal = false"
+    />
+  </Transition>
 </template>

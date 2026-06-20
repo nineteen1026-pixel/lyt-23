@@ -27,6 +27,8 @@ import {
   getCurrentSeasonalAprons,
 } from '@/data/seasonal';
 import { useOnboardingStore } from '@/stores/onboarding';
+import ShareInviteModal from '@/components/share/ShareInviteModal.vue';
+import type { ShareCardData } from '@/data/share';
 
 const router = useRouter();
 const store = useCookingStore();
@@ -36,6 +38,7 @@ const onboardingStore = useOnboardingStore();
 const favoritesStore = useFavoritesStore();
 
 const showChallengeList = ref(false);
+const showShareModal = ref(false);
 
 const FILTER_OPTIONS: { value: DishFilterMode; label: string; icon: any }[] = [
   { value: 'all', label: '全部', icon: null },
@@ -326,7 +329,7 @@ function selectDish(id: string) {
 
 <template>
   <div class="container max-w-4xl mx-auto px-4 pt-8">
-    <TopStatusBar />
+    <TopStatusBar @share="showShareModal = true" />
 
     <section class="relative mb-10 text-center animate-fade-slide">
       <div class="relative inline-block">
@@ -896,5 +899,13 @@ function selectDish(id: string) {
         </div>
       </div>
     </div>
+  </Transition>
+
+  <Transition name="fade">
+    <ShareInviteModal
+      v-if="showShareModal"
+      @close="showShareModal = false"
+      @share="(_data: ShareCardData) => showShareModal = false"
+    />
   </Transition>
 </template>

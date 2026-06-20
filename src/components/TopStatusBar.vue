@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { CalendarCheck, Flame, Award, User, BarChart3, Timer } from 'lucide-vue-next';
+import { CalendarCheck, Flame, Award, User, BarChart3, Timer, Share2 } from 'lucide-vue-next';
 import { useCookingStore } from '@/stores/cooking';
 import { useProfileStore } from '@/stores/profile';
 import { useTimerStore } from '@/stores/timer';
 import { unlocks } from '@/data/unlocks';
+
+const emit = defineEmits<{
+  (e: 'share'): void;
+}>();
 
 const store = useCookingStore();
 const profileStore = useProfileStore();
@@ -121,6 +125,19 @@ function getApronBackground(color: string, stripe: string | null): string {
         >
           {{ timerStore.activeTimerCount }}
         </span>
+      </button>
+
+      <button
+        class="flex items-center gap-2 card-soft px-4 py-3 hover:shadow-soft transition-all active:scale-95"
+        @click="emit('share')"
+      >
+        <div class="w-10 h-10 rounded-full bg-rose-500/15 flex items-center justify-center text-rose-500">
+          <Share2 :size="18" :stroke-width="2.2" />
+        </div>
+        <div class="text-left">
+          <div class="text-sm font-medium text-brown-800 leading-none">分享打卡</div>
+          <div class="text-[11px] text-brown-800/60 mt-1">邀请好友</div>
+        </div>
       </button>
 
       <button

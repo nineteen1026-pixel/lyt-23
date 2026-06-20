@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
-import { X, Copy, Download, Share2, RefreshCw, Check } from 'lucide-vue-next';
+import { X, Copy, Download, Share2, RefreshCw, Check, Loader2 } from 'lucide-vue-next';
+import html2canvas from 'html2canvas-pro';
 import ShareCardPreview from './ShareCardPreview.vue';
 import {
   buildShareCardData,
@@ -30,7 +31,10 @@ const challengesStore = useChallengesStore();
 const selectedTheme = ref<CardThemeId>('warm');
 const shareText = ref('');
 const copied = ref(false);
+const saving = ref(false);
 const activeTab = ref<'card' | 'invite'>('card');
+const cardPreviewRef = ref<InstanceType<typeof ShareCardPreview> | null>(null);
+const cardElRef = ref<HTMLElement | null>(null);
 
 const displayName = computed(() => props.userName || '小厨师');
 const displayAvatar = computed(() => props.avatarEmoji || '👨‍🍳');
@@ -116,8 +120,89 @@ async function copyShareText() {
   }
 }
 
-function handleShare() {
-  emit('share', shareCardData.value);
+async function copyInviteCode() {
+  const code = `COZY${cookingStore.totalDays.toString().padStart(4, '0')}`;
+  try {
+    await navigator.clipboard.writeText(code);
+    copied.value = true;
+    setTimeout(() => {
+      copied.value = false;
+    }, 2000);
+  } catch (err) {
+    console.error('复制失败:', err);
+  }
+}
+
+async function saveCardAsImage() {
+  if (!cardElRef.value || saving.value) return;
+
+  saving.value = true;
+  try {
+    const canvas = await html2canvas(cardElRef.value, {
+      scale: 2,
+      backgroundColor: null,
+      useCORS: true,
+      logging: false,
+    });
+
+    const link = document.createElement('a');
+    const date = new Date().toISOString().split('T')[0];
+    link.download = `我的小厨房_打卡${cookingStore.totalDays}天_${date}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+
+    emit('share', shareCardData.value);
+  } catch (err) {
+    console.error('保存卡片失败:', err);
+  } finally {
+    saving.value = false;
+  }
+}
+
+async function handleShare() {
+  if (saving.value) return;
+
+  if (navigator.share && navigator.canShare) {
+    try {
+      saving.value = true;
+      if (!cardElRef.value) throw new Error('no card element');
+
+      const canvas = await html2canvas(cardElRef.value, {
+        scale: 2,
+        backgroundColor: null,
+        useCORS: true,
+        logging: false,
+      });
+
+      const blob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob(resolve, 'image/png'),
+      );
+      if (!blob) throw new Error('canvas toBlob failed');
+
+      const file = new File([blob], '我的小厨房_打卡卡片.png', { type: 'image/png' });
+      const shareData = {
+        title: '我的小厨房打卡分享',
+        text: shareText.value,
+        files: [file],
+      };
+
+      if (navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+        emit('share', shareCardData.value);
+        saving.value = false;
+        return;
+      }
+    } catch (err: any) {
+      if (err?.name === 'AbortError') {
+        saving.value = false;
+        return;
+      }
+    } finally {
+      saving.value = false;
+    }
+  }
+
+  await saveCardAsImage();
 }
 
 function handleClose() {
@@ -177,8 +262,8 @@ function handleClose() {
 
         <div class="flex-1 overflow-y-auto p-5">
           <div v-if="activeTab === 'card'" class="space-y-5">
-            <div class="flex justify-center">
-              <ShareCardPreview :data="shareCardData" size="normal" />
+            <div class="flex justify-center" ref="cardElRef">
+              <ShareCardPreview ref="cardPreviewRef" :data="shareCardData" size="normal" />
             </div>
 
             <div>
@@ -240,11 +325,13 @@ function handleClose() {
                 <span class="text-sm font-medium">{{ copied ? '已复制' : '复制文案' }}</span>
               </button>
               <button
-                class="flex items-center justify-center gap-2 py-3 rounded-2xl bg-cream-100 border-2 border-cream-300 text-brown-800/80 hover:bg-cream-50 transition-all duration-200 active:scale-[0.98]"
-                @click="handleShare"
+                class="flex items-center justify-center gap-2 py-3 rounded-2xl bg-cream-100 border-2 border-cream-300 text-brown-800/80 hover:bg-cream-50 transition-all duration-200 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+                :disabled="saving"
+                @click="saveCardAsImage"
               >
-                <Download :size="18" />
-                <span class="text-sm font-medium">保存卡片</span>
+                <Loader2 v-if="saving" :size="18" class="animate-spin" />
+                <Download v-else :size="18" />
+                <span class="text-sm font-medium">{{ saving ? '生成中...' : '保存卡片' }}</span>
               </button>
             </div>
           </div>
@@ -351,7 +438,7 @@ function handleClose() {
                 </div>
                 <button
                   class="h-10 px-4 rounded-xl bg-apricot-500 text-white text-sm font-medium hover:bg-apricot-600 transition-colors active:scale-[0.95]"
-                  @click="copyShareText"
+                  @click="copyInviteCode"
                 >
                   {{ copied ? '已复制' : '复制' }}
                 </button>
@@ -362,12 +449,14 @@ function handleClose() {
 
         <div class="p-5 pt-3 border-t border-cream-200">
           <button
-            class="w-full py-4 rounded-2xl text-white font-bold text-lg shadow-lg active:translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2"
+            class="w-full py-4 rounded-2xl text-white font-bold text-lg shadow-lg active:translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
             style="background: linear-gradient(135deg, #FFA66D 0%, #FF8C42 50%, #F57C2E 100%); box-shadow: 0 6px 0 rgba(245, 124, 46, 0.4);"
+            :disabled="saving"
             @click="handleShare"
           >
-            <Share2 :size="20" />
-            <span>立即分享</span>
+            <Loader2 v-if="saving" :size="20" class="animate-spin" />
+            <Share2 v-else :size="20" />
+            <span>{{ saving ? '生成中...' : '立即分享' }}</span>
           </button>
         </div>
       </div>

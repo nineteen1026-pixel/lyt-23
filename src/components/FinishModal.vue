@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
+import { Flame } from 'lucide-vue-next';
+import NutritionModal from './NutritionModal.vue';
+import { useNutrition } from '@/composables/useNutrition';
+import type { Dish } from '@/data/dishes';
+import type { DishNutrition } from '@/data/nutrition';
 
 const props = defineProps<{
   dishEmoji: string;
@@ -8,6 +13,7 @@ const props = defineProps<{
   durationSeconds?: number;
   shareText?: string;
   plateDecorations?: string[];
+  dish: Dish;
 }>();
 
 const emit = defineEmits<{
@@ -17,7 +23,12 @@ const emit = defineEmits<{
   (e: 'writeNote'): void;
 }>();
 
+const { calculateDishNutrition, formatNutrientValue } = useNutrition();
+
 const copied = ref(false);
+const showNutritionModal = ref(false);
+
+const nutrition = computed<DishNutrition>(() => calculateDishNutrition(props.dish));
 
 function formatDuration(seconds: number): string {
   if (seconds < 60) return `${seconds} 秒`;
@@ -135,10 +146,28 @@ async function handleCopy() {
 
             <div
               v-if="durationSeconds != null && durationSeconds > 0"
-              class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-cream-100 border border-cream-200 mb-4"
+              class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-cream-100 border border-cream-200 mb-3"
             >
               <span class="text-sm">⏱️</span>
               <span class="text-sm font-medium text-brown-800">本次用时 {{ formatDuration(durationSeconds) }}</span>
+            </div>
+
+            <div
+              class="flex items-center justify-center gap-4 mb-4 animate-fade-slide"
+              style="animation-delay: 0.2s"
+            >
+              <button
+                class="flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-apricot-50 to-amber-50 border border-apricot-200 hover:shadow-soft transition-all active:scale-[0.98]"
+                @click="showNutritionModal = true"
+              >
+                <Flame :size="18" class="text-apricot-500" />
+                <span class="text-sm font-medium text-apricot-600">
+                  约 {{ nutrition.totalCalories }} 千卡
+                </span>
+                <span class="text-xs text-brown-800/50">
+                  蛋白{{ formatNutrientValue(nutrition.totalProtein) }}g · 碳水{{ formatNutrientValue(nutrition.totalCarbs) }}g · 脂肪{{ formatNutrientValue(nutrition.totalFat) }}g
+                </span>
+              </button>
             </div>
 
             <div class="mb-6">
@@ -200,6 +229,14 @@ async function handleCopy() {
         </div>
       </div>
     </div>
+
+    <NutritionModal
+      :show="showNutritionModal"
+      :dish-name="dishName"
+      :dish-emoji="dishEmoji"
+      :nutrition="nutrition"
+      @close="showNutritionModal = false"
+    />
   </div>
 </template>
 

@@ -569,13 +569,14 @@ function handleSaveNote(data: { content: string; rating: 1 | 2 | 3 | 4 | 5 }) {
 
       <Transition name="fade">
         <FinishModal
-          v-if="showFinishModal"
+          v-if="showFinishModal && dish"
           :dish-emoji="dish.emoji"
           :dish-name="dish.name"
           :is-checked-in-today="store.isCheckedInToday"
           :duration-seconds="finishDuration"
           :share-text="finishShareText"
           :plate-decorations="plateDecorations"
+          :dish="dish"
           @check-in="handleCheckIn"
           @back-home="handleBackHome"
           @cook-more="handleCookMore"

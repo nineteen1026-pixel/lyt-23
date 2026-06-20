@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import { ArrowLeft, ChefHat, Sparkles, Target, Award } from 'lucide-vue-next';
+import { ArrowLeft, ChefHat, Sparkles, Target, Award, Flame, Beef, Wheat, Droplet, TrendingUp, Calendar, CalendarRange, BarChart3 } from 'lucide-vue-next';
 import CheckInCalendar from '@/components/achievements/CheckInCalendar.vue';
 import UnlockProgress from '@/components/achievements/UnlockProgress.vue';
 import DecorationGrid from '@/components/achievements/DecorationGrid.vue';
@@ -10,13 +10,40 @@ import ChallengeList from '@/components/challenges/ChallengeList.vue';
 import { useCookingStore } from '@/stores/cooking';
 import { useChallengesStore } from '@/stores/challenges';
 import { challenges } from '@/data/challenges';
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useOnboardingStore } from '@/stores/onboarding';
+import { useNutrition } from '@/composables/useNutrition';
 
 const router = useRouter();
 const store = useCookingStore();
 const challengesStore = useChallengesStore();
 const onboardingStore = useOnboardingStore();
+const { formatNutrientValue } = useNutrition();
+
+type NutritionPeriod = 'today' | 'week' | 'month' | 'total';
+const activeNutritionPeriod = ref<NutritionPeriod>('week');
+
+const currentNutrition = computed(() => {
+  switch (activeNutritionPeriod.value) {
+    case 'today':
+      return store.todayNutrition;
+    case 'week':
+      return store.weekNutrition;
+    case 'month':
+      return store.monthNutrition;
+    case 'total':
+      return store.totalNutrition;
+    default:
+      return store.weekNutrition;
+  }
+});
+
+const nutritionPeriods: { key: NutritionPeriod; label: string; icon: any }[] = [
+  { key: 'today', label: '今日', icon: Calendar },
+  { key: 'week', label: '本周', icon: CalendarRange },
+  { key: 'month', label: '本月', icon: BarChart3 },
+  { key: 'total', label: '累计', icon: TrendingUp },
+];
 
 onMounted(() => {
   if (!onboardingStore.isCompleted) {
@@ -80,6 +107,106 @@ function handleStartChallenge(challengeId: string) {
     <section class="mb-10 animate-fade-slide" style="animation-delay: 0.05s" data-onboarding="calendar">
       <h2 class="text-display text-xl text-brown-900 mb-4">📅 打卡日历</h2>
       <CheckInCalendar />
+    </section>
+
+    <section class="mb-10 animate-fade-slide" style="animation-delay: 0.07s">
+      <div class="flex items-end justify-between mb-4">
+        <div>
+          <h2 class="text-display text-xl text-brown-900 flex items-center gap-2">
+            <Flame :size="20" class="text-apricot-500" />
+            营养统计
+          </h2>
+          <p class="text-xs text-brown-800/60 mt-1">追踪你的饮食营养摄入情况</p>
+        </div>
+      </div>
+
+      <div class="card-soft p-5">
+        <div class="flex items-center gap-2 mb-5 overflow-x-auto pb-2">
+          <button
+            v-for="period in nutritionPeriods"
+            :key="period.key"
+            class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap"
+            :class="activeNutritionPeriod === period.key
+              ? 'bg-gradient-to-r from-apricot-500 to-apricot-600 text-white shadow-soft'
+              : 'bg-cream-50 text-brown-700 hover:bg-cream-100'"
+            @click="activeNutritionPeriod = period.key"
+          >
+            <component :is="period.icon" :size="16" />
+            <span>{{ period.label }}</span>
+          </button>
+        </div>
+
+        <div class="bg-gradient-to-br from-apricot-50 to-amber-50 rounded-2xl p-5 mb-5 border border-apricot-100">
+          <div class="flex items-center justify-center gap-3">
+            <Flame :size="28" class="text-apricot-500" />
+            <span class="text-display text-5xl text-apricot-600 font-bold">
+              {{ currentNutrition.calories }}
+            </span>
+            <span class="text-lg text-brown-800/60">千卡</span>
+          </div>
+          <p class="text-center text-sm text-brown-800/60 mt-2">
+            {{ activeNutritionPeriod === 'today' ? '今日' : activeNutritionPeriod === 'week' ? '本周' : activeNutritionPeriod === 'month' ? '本月' : '累计' }}总热量摄入
+          </p>
+        </div>
+
+        <div class="grid grid-cols-3 gap-4 mb-5">
+          <div class="text-center p-4 rounded-2xl bg-rose-50 border border-rose-100">
+            <Beef :size="22" class="mx-auto text-rose-500 mb-2" />
+            <div class="text-display text-3xl text-rose-600 font-bold">
+              {{ formatNutrientValue(currentNutrition.protein) }}
+            </div>
+            <div class="text-xs text-brown-800/60 mt-1">蛋白质 (g)</div>
+          </div>
+          <div class="text-center p-4 rounded-2xl bg-amber-50 border border-amber-100">
+            <Wheat :size="22" class="mx-auto text-amber-500 mb-2" />
+            <div class="text-display text-3xl text-amber-600 font-bold">
+              {{ formatNutrientValue(currentNutrition.carbs) }}
+            </div>
+            <div class="text-xs text-brown-800/60 mt-1">碳水 (g)</div>
+          </div>
+          <div class="text-center p-4 rounded-2xl bg-blue-50 border border-blue-100">
+            <Droplet :size="22" class="mx-auto text-blue-500 mb-2" />
+            <div class="text-display text-3xl text-blue-600 font-bold">
+              {{ formatNutrientValue(currentNutrition.fat) }}
+            </div>
+            <div class="text-xs text-brown-800/60 mt-1">脂肪 (g)</div>
+          </div>
+        </div>
+
+        <div>
+          <h4 class="text-sm font-medium text-brown-800 mb-3">宏量营养素占比</h4>
+          <div class="h-4 rounded-full bg-cream-200 overflow-hidden flex">
+            <div
+              class="h-full bg-rose-400 transition-all duration-500"
+              :style="{ width: `${currentNutrition.calories > 0 ? Math.round((currentNutrition.protein * 4 / (currentNutrition.protein * 4 + currentNutrition.carbs * 4 + currentNutrition.fat * 9)) * 100) : 0}%` }"
+            />
+            <div
+              class="h-full bg-amber-400 transition-all duration-500"
+              :style="{ width: `${currentNutrition.calories > 0 ? Math.round((currentNutrition.carbs * 4 / (currentNutrition.protein * 4 + currentNutrition.carbs * 4 + currentNutrition.fat * 9)) * 100) : 0}%` }"
+            />
+            <div
+              class="h-full bg-blue-400 transition-all duration-500"
+              :style="{ width: `${currentNutrition.calories > 0 ? Math.round((currentNutrition.fat * 9 / (currentNutrition.protein * 4 + currentNutrition.carbs * 4 + currentNutrition.fat * 9)) * 100) : 0}%` }"
+            />
+          </div>
+          <div class="flex justify-between mt-2 text-xs">
+            <span class="text-rose-500">
+              蛋白质 {{ currentNutrition.calories > 0 ? Math.round((currentNutrition.protein * 4 / (currentNutrition.protein * 4 + currentNutrition.carbs * 4 + currentNutrition.fat * 9)) * 100) : 0 }}%
+            </span>
+            <span class="text-amber-500">
+              碳水 {{ currentNutrition.calories > 0 ? Math.round((currentNutrition.carbs * 4 / (currentNutrition.protein * 4 + currentNutrition.carbs * 4 + currentNutrition.fat * 9)) * 100) : 0 }}%
+            </span>
+            <span class="text-blue-500">
+              脂肪 {{ currentNutrition.calories > 0 ? Math.round((currentNutrition.fat * 9 / (currentNutrition.protein * 4 + currentNutrition.carbs * 4 + currentNutrition.fat * 9)) * 100) : 0 }}%
+            </span>
+          </div>
+        </div>
+
+        <div v-if="currentNutrition.calories === 0" class="text-center py-6 text-brown-800/50">
+          <div class="text-4xl mb-2">🍽️</div>
+          <p class="text-sm">还没有营养数据，快去做道菜吧～</p>
+        </div>
+      </div>
     </section>
 
     <section class="mb-10 animate-fade-slide" style="animation-delay: 0.08s" data-onboarding="badges">

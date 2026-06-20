@@ -10,12 +10,22 @@ import {
   type KitchenBackground,
   type CounterMaterial,
 } from '@/data/themes';
+import { getDishById } from '@/data/dishes';
+import { useNutrition } from '@/composables/useNutrition';
+
+export interface NutritionInfo {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+}
 
 export interface CookingRecord {
   dishId: string;
   completedAt: string;
   durationSeconds?: number;
   shareText?: string;
+  nutrition?: NutritionInfo;
 }
 
 export interface Note {
@@ -81,15 +91,126 @@ export const useCookingStore = defineStore(
       getCounterById(activeCounter.value) ?? getDefaultCounter(),
     );
 
-    function addCookingRecord(dishId: string, extra?: { durationSeconds?: number; shareText?: string }): void {
+    const nutrition = useNutrition();
+
+    function addCookingRecord(dishId: string, extra?: { durationSeconds?: number; shareText?: string; nutrition?: NutritionInfo }): void {
+      const dish = getDishById(dishId);
+      let nutritionInfo: NutritionInfo | undefined = extra?.nutrition;
+      
+      if (!nutritionInfo && dish) {
+        const dishNutrition = nutrition.calculateDishNutrition(dish);
+        nutritionInfo = {
+          calories: dishNutrition.totalCalories,
+          protein: dishNutrition.totalProtein,
+          carbs: dishNutrition.totalCarbs,
+          fat: dishNutrition.totalFat,
+        };
+      }
+
       cookingHistory.value.unshift({
         dishId,
         completedAt: new Date().toISOString(),
+        nutrition: nutritionInfo,
         ...extra,
       });
       if (cookingHistory.value.length > 500) {
         cookingHistory.value = cookingHistory.value.slice(0, 500);
       }
+    }
+
+    const totalNutrition = computed((): NutritionInfo => {
+      return cookingHistory.value.reduce(
+        (acc, record) => {
+          if (record.nutrition) {
+            acc.calories += record.nutrition.calories;
+            acc.protein += record.nutrition.protein;
+            acc.carbs += record.nutrition.carbs;
+            acc.fat += record.nutrition.fat;
+          }
+          return acc;
+        },
+        { calories: 0, protein: 0, carbs: 0, fat: 0 }
+      );
+    });
+
+    const todayNutrition = computed((): NutritionInfo => {
+      const today = todayStr();
+      return cookingHistory.value
+        .filter((r) => r.completedAt.startsWith(today))
+        .reduce(
+          (acc, record) => {
+            if (record.nutrition) {
+              acc.calories += record.nutrition.calories;
+              acc.protein += record.nutrition.protein;
+              acc.carbs += record.nutrition.carbs;
+              acc.fat += record.nutrition.fat;
+            }
+            return acc;
+          },
+          { calories: 0, protein: 0, carbs: 0, fat: 0 }
+        );
+    });
+
+    const weekNutrition = computed((): NutritionInfo => {
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+      const oneWeekAgoStr = oneWeekAgo.toISOString().split('T')[0];
+      
+      return cookingHistory.value
+        .filter((r) => r.completedAt.split('T')[0] >= oneWeekAgoStr)
+        .reduce(
+          (acc, record) => {
+            if (record.nutrition) {
+              acc.calories += record.nutrition.calories;
+              acc.protein += record.nutrition.protein;
+              acc.carbs += record.nutrition.carbs;
+              acc.fat += record.nutrition.fat;
+            }
+            return acc;
+          },
+          { calories: 0, protein: 0, carbs: 0, fat: 0 }
+        );
+    });
+
+    const monthNutrition = computed((): NutritionInfo => {
+      const oneMonthAgo = new Date();
+      oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+      const oneMonthAgoStr = oneMonthAgo.toISOString().split('T')[0];
+      
+      return cookingHistory.value
+        .filter((r) => r.completedAt.split('T')[0] >= oneMonthAgoStr)
+        .reduce(
+          (acc, record) => {
+            if (record.nutrition) {
+              acc.calories += record.nutrition.calories;
+              acc.protein += record.nutrition.protein;
+              acc.carbs += record.nutrition.carbs;
+              acc.fat += record.nutrition.fat;
+            }
+            return acc;
+          },
+          { calories: 0, protein: 0, carbs: 0, fat: 0 }
+        );
+    });
+
+    function getNutritionByDateRange(startDate: string, endDate: string): NutritionInfo {
+      return cookingHistory.value
+        .filter((r) => {
+          const dateStr = r.completedAt.split('T')[0];
+          return dateStr >= startDate && dateStr <= endDate;
+        })
+        .reduce(
+          (acc, record) => {
+            if (record.nutrition) {
+              acc.calories += record.nutrition.calories;
+              acc.protein += record.nutrition.protein;
+              acc.carbs += record.nutrition.carbs;
+              acc.fat += record.nutrition.fat;
+            }
+            return acc;
+          },
+          { calories: 0, protein: 0, carbs: 0, fat: 0 }
+        );
     }
 
     function addNote(note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>): Note {
@@ -265,6 +386,10 @@ export const useCookingStore = defineStore(
       activeBackgroundData,
       activeCounterData,
       isCheckedInToday,
+      totalNutrition,
+      todayNutrition,
+      weekNutrition,
+      monthNutrition,
       addCookingRecord,
       addNote,
       updateNote,
@@ -278,6 +403,7 @@ export const useCookingStore = defineStore(
       setActiveCounter,
       applyThemeToCSSVariables,
       hasCheckedInOn,
+      getNutritionByDateRange,
     };
   },
   {

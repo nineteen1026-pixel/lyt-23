@@ -7,8 +7,10 @@ export interface TipIllustration {
 
 export interface StepTip {
   id: string;
-  title: string;
-  content: string;
+  titleI18nKey?: string;
+  contentI18nKey?: string;
+  title?: string;
+  content?: string;
   image?: string;
   emoji?: string;
   illustration?: TipIllustration;
@@ -17,21 +19,31 @@ export interface StepTip {
 
 export interface CommonMistake {
   id: string;
-  title: string;
-  mistake: string;
-  consequence: string;
-  solution: string;
+  titleI18nKey?: string;
+  mistakeI18nKey?: string;
+  consequenceI18nKey?: string;
+  solutionI18nKey?: string;
+  title?: string;
+  mistake?: string;
+  consequence?: string;
+  solution?: string;
+  image?: string;
   emoji?: string;
+  illustration?: TipIllustration;
+}
+
+export interface PrepGuide {
+  titleI18nKey?: string;
+  itemI18nKeys?: string[];
+  title?: string;
+  items?: string[];
 }
 
 export interface DishTutorial {
   dishId: string;
   stepTips: Record<number, StepTip[]>;
   commonMistakes: CommonMistake[];
-  prepGuide?: {
-    title: string;
-    items: string[];
-  };
+  prepGuide?: PrepGuide;
   proTips?: StepTip[];
 }
 
@@ -39,20 +51,21 @@ export const dishTutorials: DishTutorial[] = [
   {
     dishId: 'tomato-egg',
     prepGuide: {
-      title: '备料清单',
-      items: [
-        '番茄 2 个（约 300g），顶部划十字刀',
-        '鸡蛋 3 个，加少许盐打散',
-        '葱花 适量，分葱白和葱绿',
-        '盐 1/4 小勺，糖 1 小勺',
+      titleI18nKey: 'tutorial.tomato-egg.prep.title',
+      itemI18nKeys: [
+        'tutorial.tomato-egg.prep.items.0',
+        'tutorial.tomato-egg.prep.items.1',
+        'tutorial.tomato-egg.prep.items.2',
+        'tutorial.tomato-egg.prep.items.3',
       ],
     },
     stepTips: {
       0: [
         {
           id: 'te-wash-1',
-          title: '番茄去皮小技巧',
-          content: '番茄顶部划十字后，放入沸水中烫 30 秒，捞出过冷水，皮就能轻松撕下来。带皮炒会影响口感哦。',
+          titleI18nKey: 'tutorial.tomato-egg.stepTips.0.te-wash-1.title',
+          contentI18nKey: 'tutorial.tomato-egg.stepTips.0.te-wash-1.content',
+          image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=tomato%20peeling%20in%20boiling%20water%20cooking%20tips&image_size=square',
           emoji: '🍅',
           importance: 'important',
           illustration: {
@@ -64,8 +77,9 @@ export const dishTutorials: DishTutorial[] = [
         },
         {
           id: 'te-wash-2',
-          title: '鸡蛋去腥',
-          content: '打散鸡蛋时滴 2 滴白醋或料酒，可以有效去除蛋腥味，炒出来更嫩滑。',
+          titleI18nKey: 'tutorial.tomato-egg.stepTips.0.te-wash-2.title',
+          contentI18nKey: 'tutorial.tomato-egg.stepTips.0.te-wash-2.content',
+          image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=beating%20eggs%20in%20bowl%20with%20vinegar%20cooking&image_size=square',
           emoji: '🥚',
           importance: 'info',
           illustration: {
@@ -78,8 +92,9 @@ export const dishTutorials: DishTutorial[] = [
       1: [
         {
           id: 'te-cut-1',
-          title: '番茄切法有讲究',
-          content: '去皮番茄切成月牙块，大小约 3cm。不要切太碎，炒出沙后能保留一些颗粒感更好吃。',
+          titleI18nKey: 'tutorial.tomato-egg.stepTips.1.te-cut-1.title',
+          contentI18nKey: 'tutorial.tomato-egg.stepTips.1.te-cut-1.content',
+          image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=cutting%20tomatoes%20on%20cutting%20board%20kitchen&image_size=square',
           emoji: '🔪',
           importance: 'info',
           illustration: {
@@ -92,8 +107,9 @@ export const dishTutorials: DishTutorial[] = [
       2: [
         {
           id: 'te-season-1',
-          title: '黄金调味比例',
-          content: '盐和糖的比例建议 1:3，糖多一点能中和番茄的酸味，调出经典酸甜口味。可以边尝边调。',
+          titleI18nKey: 'tutorial.tomato-egg.stepTips.2.te-season-1.title',
+          contentI18nKey: 'tutorial.tomato-egg.stepTips.2.te-season-1.content',
+          image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=seasoning%20eggs%20with%20salt%20and%20sugar%20cooking&image_size=square',
           emoji: '🧂',
           importance: 'critical',
           illustration: {
@@ -107,8 +123,9 @@ export const dishTutorials: DishTutorial[] = [
       3: [
         {
           id: 'te-bake-1',
-          title: '炒蛋火候是关键',
-          content: '油温六成热（筷子插进去有小气泡）倒入蛋液，底部定型后快速划散，表面还有些湿润时盛出，这样鸡蛋最嫩。',
+          titleI18nKey: 'tutorial.tomato-egg.stepTips.3.te-bake-1.title',
+          contentI18nKey: 'tutorial.tomato-egg.stepTips.3.te-bake-1.content',
+          image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=scrambling%20eggs%20in%20wok%20chinese%20cooking&image_size=square',
           emoji: '🔥',
           importance: 'critical',
           illustration: {
@@ -120,8 +137,9 @@ export const dishTutorials: DishTutorial[] = [
         },
         {
           id: 'te-bake-2',
-          title: '番茄要炒出沙',
-          content: '炒番茄时用铲子背压一压，中火炒 2-3 分钟至出红油和汤汁，这道菜的灵魂就在这锅番茄酱汁里。',
+          titleI18nKey: 'tutorial.tomato-egg.stepTips.3.te-bake-2.title',
+          contentI18nKey: 'tutorial.tomato-egg.stepTips.3.te-bake-2.content',
+          image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=tomatoes%20cooking%20in%20pan%20saucy%20red&image_size=square',
           emoji: '🍳',
           importance: 'important',
           illustration: {
@@ -130,12 +148,27 @@ export const dishTutorials: DishTutorial[] = [
             gradientTo: '#C1121F',
           },
         },
+        {
+          id: 'te-bake-3',
+          titleI18nKey: 'tutorial.tomato-egg.stepTips.3.te-bake-3.title',
+          contentI18nKey: 'tutorial.tomato-egg.stepTips.3.te-bake-3.content',
+          image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=adding%20eggs%20to%20tomatoes%20in%20wok&image_size=square',
+          emoji: '🔥',
+          importance: 'important',
+          illustration: {
+            emoji: '🔥',
+            gradientFrom: '#FF7043',
+            gradientTo: '#E64A19',
+            pattern: 'dots',
+          },
+        },
       ],
       4: [
         {
           id: 'te-plate-1',
-          title: '装盘提亮',
-          content: '最后撒上一把葱绿碎，既提香又增色，红白绿三色搭配，视觉和味觉双丰收。',
+          titleI18nKey: 'tutorial.tomato-egg.stepTips.4.te-plate-1.title',
+          contentI18nKey: 'tutorial.tomato-egg.stepTips.4.te-plate-1.content',
+          image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=tomato%20egg%20dish%20garnished%20with%20scallions&image_size=square',
           emoji: '✨',
           importance: 'info',
           illustration: {
@@ -150,40 +183,62 @@ export const dishTutorials: DishTutorial[] = [
     commonMistakes: [
       {
         id: 'tm-mistake-1',
-        title: '鸡蛋炒老了',
-        mistake: '鸡蛋下锅后一直翻炒到完全凝固才盛出。',
-        consequence: '鸡蛋变得又干又柴，像橡皮一样难嚼。',
-        solution: '蛋液底部定型、表面还有流动感时就划散盛出，后续还要回锅，余温会把它焖熟的。',
-        emoji: '😫',
+        titleI18nKey: 'tutorial.tomato-egg.mistakes.te-mistake-1.title',
+        mistakeI18nKey: 'tutorial.tomato-egg.mistakes.te-mistake-1.mistake',
+        consequenceI18nKey: 'tutorial.tomato-egg.mistakes.te-mistake-1.consequence',
+        solutionI18nKey: 'tutorial.tomato-egg.mistakes.te-mistake-1.solution',
+        image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=overcooked%20rubbery%20eggs%20in%20pan&image_size=square',
+        emoji: '🥚',
+        illustration: {
+          emoji: '😵',
+          gradientFrom: '#E63946',
+          gradientTo: '#C1121F',
+          pattern: 'dots',
+        },
       },
       {
         id: 'tm-mistake-2',
-        title: '番茄没出汁',
-        mistake: '番茄切太大块，下锅翻炒几下就加鸡蛋。',
-        consequence: '番茄汤汁不足，整道菜干巴巴的，没有拌饭的灵魂。',
-        solution: '番茄切小块后耐心炒 2-3 分钟，边炒边按压出沙，看到红油出来就对了。',
-        emoji: '💧',
+        titleI18nKey: 'tutorial.tomato-egg.mistakes.te-mistake-2.title',
+        mistakeI18nKey: 'tutorial.tomato-egg.mistakes.te-mistake-2.mistake',
+        consequenceI18nKey: 'tutorial.tomato-egg.mistakes.te-mistake-2.consequence',
+        solutionI18nKey: 'tutorial.tomato-egg.mistakes.te-mistake-2.solution',
+        image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=watery%20tomatoes%20not%20saucy%20cooking&image_size=square',
+        emoji: '🍅',
+        illustration: {
+          emoji: '💧',
+          gradientFrom: '#42A5F5',
+          gradientTo: '#1E88E5',
+        },
       },
       {
         id: 'tm-mistake-3',
-        title: '调味失衡',
-        mistake: '只加盐不加糖，或糖加得太少。',
-        consequence: '整道菜只有酸味，难以下咽，或者咸得发苦。',
-        solution: '记住盐糖比 1:3 的黄金法则，出锅前尝一口，根据口味微调。',
-        emoji: '⚖️',
+        titleI18nKey: 'tutorial.tomato-egg.mistakes.te-mistake-3.title',
+        mistakeI18nKey: 'tutorial.tomato-egg.mistakes.te-mistake-3.mistake',
+        consequenceI18nKey: 'tutorial.tomato-egg.mistakes.te-mistake-3.consequence',
+        solutionI18nKey: 'tutorial.tomato-egg.mistakes.te-mistake-3.solution',
+        image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=tasting%20food%20with%20sour%20face%20expression&image_size=square',
+        emoji: '🧂',
+        illustration: {
+          emoji: '😝',
+          gradientFrom: '#FFD54F',
+          gradientTo: '#FFB300',
+          pattern: 'stripes',
+        },
       },
     ],
     proTips: [
       {
-        id: 'tm-pro-1',
-        title: '米饭杀手升级',
-        content: '出锅前勾一层薄芡（淀粉+水），汤汁会浓稠地裹在每一块番茄和鸡蛋上，拌饭绝了。',
+        id: 'te-pro-1',
+        titleI18nKey: 'tutorial.tomato-egg.proTips.te-pro-1.title',
+        contentI18nKey: 'tutorial.tomato-egg.proTips.te-pro-1.content',
+        image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=adding%20ketchup%20to%20tomatoes%20cooking%20tip&image_size=square',
         emoji: '⭐',
         importance: 'important',
         illustration: {
-          emoji: '🍚',
-          gradientFrom: '#9B59B6',
-          gradientTo: '#8E44AD',
+          emoji: '💫',
+          gradientFrom: '#FFD54F',
+          gradientTo: '#FFB300',
+          pattern: 'dots',
         },
       },
     ],
@@ -191,26 +246,27 @@ export const dishTutorials: DishTutorial[] = [
   {
     dishId: 'miso-salmon',
     prepGuide: {
-      title: '备料清单',
-      items: [
-        '三文鱼 1 块（约 200g），去皮或带皮均可',
-        '白味噌 2 大勺，清酒 1 大勺',
-        '蜂蜜 1 小勺，姜末 少许',
-        '黑胡椒、海盐 适量',
+      titleI18nKey: 'tutorial.miso-salmon.prep.title',
+      itemI18nKeys: [
+        'tutorial.miso-salmon.prep.items.0',
+        'tutorial.miso-salmon.prep.items.1',
+        'tutorial.miso-salmon.prep.items.2',
+        'tutorial.miso-salmon.prep.items.3',
       ],
     },
     stepTips: {
       0: [
         {
           id: 'ms-wash-1',
-          title: '三文鱼擦干是关键',
-          content: '用厨房纸把三文鱼表面的水分彻底吸干，腌的时候才能入味，烤的时候也不会出水变腥。',
+          titleI18nKey: 'tutorial.miso-salmon.stepTips.0.ms-wash-1.title',
+          contentI18nKey: 'tutorial.miso-salmon.stepTips.0.ms-wash-1.content',
+          image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=patting%20salmon%20dry%20with%20paper%20towel&image_size=square',
           emoji: '🐟',
           importance: 'critical',
           illustration: {
             emoji: '🐟',
-            gradientFrom: '#FFA07A',
-            gradientTo: '#FF7F50',
+            gradientFrom: '#FF8A65',
+            gradientTo: '#FF5722',
             pattern: 'dots',
           },
         },
@@ -218,82 +274,89 @@ export const dishTutorials: DishTutorial[] = [
       1: [
         {
           id: 'ms-cut-1',
-          title: '检查鱼刺',
-          content: '用手摸一摸鱼肉表面，如果摸到硬硬的小刺，用镊子夹出来。超市切好的鱼排也可能有残留的哦。',
-          emoji: '🔍',
-          importance: 'important',
+          titleI18nKey: 'tutorial.miso-salmon.stepTips.1.ms-cut-1.title',
+          contentI18nKey: 'tutorial.miso-salmon.stepTips.1.ms-cut-1.content',
+          image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=salmon%20fillet%20with%20crispy%20skin%20on%20plate&image_size=square',
+          emoji: '🔪',
+          importance: 'info',
           illustration: {
-            emoji: '🔍',
-            gradientFrom: '#74B9FF',
-            gradientTo: '#0984E3',
+            emoji: '✨',
+            gradientFrom: '#81C784',
+            gradientTo: '#4CAF50',
           },
         },
       ],
       2: [
         {
           id: 'ms-season-1',
-          title: '味噌酱调法',
-          content: '味噌+清酒+蜂蜜混合均匀，不要有结块。清酒可以用米酒或白葡萄酒代替，蜂蜜可用白糖替代。',
+          titleI18nKey: 'tutorial.miso-salmon.stepTips.2.ms-season-1.title',
+          contentI18nKey: 'tutorial.miso-salmon.stepTips.2.ms-season-1.content',
+          image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=mixing%20miso%20paste%20with%20sake%20and%20honey&image_size=square',
           emoji: '🥣',
-          importance: 'info',
+          importance: 'important',
           illustration: {
             emoji: '🥣',
-            gradientFrom: '#FDCB6E',
-            gradientTo: '#E17055',
+            gradientFrom: '#BA68C8',
+            gradientTo: '#9C27B0',
+            pattern: 'stripes',
           },
         },
         {
           id: 'ms-season-2',
-          title: '腌制时间',
-          content: '味噌酱均匀抹在鱼肉上，腌 15-20 分钟就够了。味噌本身有咸味，腌太久会咸。',
-          emoji: '⏰',
-          importance: 'important',
+          titleI18nKey: 'tutorial.miso-salmon.stepTips.2.ms-season-2.title',
+          contentI18nKey: 'tutorial.miso-salmon.stepTips.2.ms-season-2.content',
+          image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=marinating%20salmon%20with%20miso%20glaze&image_size=square',
+          emoji: '⏱️',
+          importance: 'info',
           illustration: {
-            emoji: '⏰',
-            gradientFrom: '#55EFC4',
-            gradientTo: '#00B894',
-            pattern: 'stripes',
+            emoji: '⏱️',
+            gradientFrom: '#64B5F6',
+            gradientTo: '#1976D2',
           },
         },
       ],
       3: [
         {
           id: 'ms-bake-1',
-          title: '烤箱预热',
-          content: '烤箱提前预热到 200°C，烤 12-15 分钟。看到表面微焦、鱼肉用叉子能轻松分开就是熟了。',
+          titleI18nKey: 'tutorial.miso-salmon.stepTips.3.ms-bake-1.title',
+          contentI18nKey: 'tutorial.miso-salmon.stepTips.3.ms-bake-1.content',
+          image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=searing%20salmon%20skin%20side%20down%20in%20pan&image_size=square',
           emoji: '🔥',
           importance: 'important',
           illustration: {
-            emoji: '🔥',
-            gradientFrom: '#FF7675',
-            gradientTo: '#D63031',
+            emoji: '🍳',
+            gradientFrom: '#FF8A65',
+            gradientTo: '#F4511E',
             pattern: 'dots',
           },
         },
         {
           id: 'ms-bake-2',
-          title: '没有烤箱怎么办',
-          content: '用平底锅也可以！小火慢煎，皮朝下煎 4 分钟，翻面再煎 2 分钟，刷上剩余味噌酱即可。',
-          emoji: '🍳',
-          importance: 'info',
+          titleI18nKey: 'tutorial.miso-salmon.stepTips.3.ms-bake-2.title',
+          contentI18nKey: 'tutorial.miso-salmon.stepTips.3.ms-bake-2.content',
+          image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=perfectly%20cooked%20salmon%20pink%20center&image_size=square',
+          emoji: '♨️',
+          importance: 'critical',
           illustration: {
-            emoji: '🍳',
-            gradientFrom: '#FAB1A0',
-            gradientTo: '#E17055',
+            emoji: '👌',
+            gradientFrom: '#FFD54F',
+            gradientTo: '#FF9800',
+            pattern: 'stripes',
           },
         },
       ],
       4: [
         {
           id: 'ms-plate-1',
-          title: '经典搭配',
-          content: '配一碗白米饭、一碟腌黄瓜和味噌汤，就是标准的日式定食套餐啦，摆盘时淋上烤盘里的酱汁。',
-          emoji: '🍱',
+          titleI18nKey: 'tutorial.miso-salmon.stepTips.4.ms-plate-1.title',
+          contentI18nKey: 'tutorial.miso-salmon.stepTips.4.ms-plate-1.content',
+          image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=beautifully%20plated%20miso%20salmon%20with%20rice%20and%20salad&image_size=square',
+          emoji: '🍽️',
           importance: 'info',
           illustration: {
-            emoji: '🍱',
-            gradientFrom: '#A29BFE',
-            gradientTo: '#6C5CE7',
+            emoji: '🌟',
+            gradientFrom: '#81D4FA',
+            gradientTo: '#29B6F6',
             pattern: 'dots',
           },
         },
@@ -302,32 +365,48 @@ export const dishTutorials: DishTutorial[] = [
     commonMistakes: [
       {
         id: 'ms-mistake-1',
-        title: '三文鱼烤过头',
-        mistake: '怕不熟，烤了 20 分钟以上。',
-        consequence: '鱼肉变干发柴，像啃木屑，Omega-3 也流失了。',
-        solution: '200°C 烤 12 分钟就够了，或者用温度计测中心温度到 50°C 就关火，余温会继续加热。',
-        emoji: '🥵',
+        titleI18nKey: 'tutorial.miso-salmon.mistakes.ms-mistake-1.title',
+        mistakeI18nKey: 'tutorial.miso-salmon.mistakes.ms-mistake-1.mistake',
+        consequenceI18nKey: 'tutorial.miso-salmon.mistakes.ms-mistake-1.consequence',
+        solutionI18nKey: 'tutorial.miso-salmon.mistakes.ms-mistake-1.solution',
+        image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=salmon%20skin%20stuck%20to%20pan%20broken&image_size=square',
+        emoji: '🫠',
+        illustration: {
+          emoji: '💔',
+          gradientFrom: '#E57373',
+          gradientTo: '#E53935',
+          pattern: 'dots',
+        },
       },
       {
         id: 'ms-mistake-2',
-        title: '没擦干就腌',
-        mistake: '三文鱼洗干净直接抹酱，表面还带着水珠。',
-        consequence: '水把味噌酱稀释了，入味不均匀，烤的时候还会出水，鱼皮不脆。',
-        solution: '一定要用厨房纸反复按压，把表面水分吸干，这是外焦里嫩的第一步。',
-        emoji: '💧',
+        titleI18nKey: 'tutorial.miso-salmon.mistakes.ms-mistake-2.title',
+        mistakeI18nKey: 'tutorial.miso-salmon.mistakes.ms-mistake-2.mistake',
+        consequenceI18nKey: 'tutorial.miso-salmon.mistakes.ms-mistake-2.consequence',
+        solutionI18nKey: 'tutorial.miso-salmon.mistakes.ms-mistake-2.solution',
+        image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=dry%20overcooked%20salmon%20on%20plate&image_size=square',
+        emoji: '🥩',
+        illustration: {
+          emoji: '😫',
+          gradientFrom: '#FFB74D',
+          gradientTo: '#F57C00',
+          pattern: 'stripes',
+        },
       },
     ],
     proTips: [
       {
         id: 'ms-pro-1',
-        title: '鱼皮脆到掉渣',
-        content: '带皮烤的话，先在皮上划几刀（不要切到肉），用盐腌 10 分钟出水后擦干再烤，皮会脆脆的。',
+        titleI18nKey: 'tutorial.miso-salmon.proTips.ms-pro-1.title',
+        contentI18nKey: 'tutorial.miso-salmon.proTips.ms-pro-1.content',
+        image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=cooking%20salmon%20in%20pan%20with%20lid%20no%20oven&image_size=square',
         emoji: '⭐',
-        importance: 'important',
+        importance: 'info',
         illustration: {
-          emoji: '✨',
-          gradientFrom: '#FDCB6E',
-          gradientTo: '#E17055',
+          emoji: '🍳',
+          gradientFrom: '#FFF9C4',
+          gradientTo: '#FFF59D',
+          pattern: 'dots',
         },
       },
     ],

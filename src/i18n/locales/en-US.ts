@@ -301,4 +301,180 @@ export default {
     selectLanguage: 'Select Language',
     currentLanguage: 'Current Language',
   },
+  tutorial: {
+    sidebarTitle: 'Cooking Tutorial',
+    sidebarSubtitle: 'Follow tips to avoid common mistakes and cook perfect dishes',
+    prepList: 'Prep List',
+    currentStepTips: 'Step {step} · {stepName} Tips',
+    currentStepBadge: 'Current Step',
+    commonMistakes: 'Common Mistakes',
+    proTips: 'Pro Tips',
+    mistakeLabel: 'Mistake',
+    consequenceLabel: 'Consequence',
+    solutionLabel: 'Solution',
+    importance: {
+      info: 'Tip',
+      important: 'Important',
+      critical: 'Must Read',
+    },
+    stepNames: {
+      wash: 'Wash & Prep',
+      cut: 'Cut & Prepare',
+      season: 'Seasoning',
+      bake: 'Cooking',
+      plate: 'Plating',
+    },
+    'tomato-egg': {
+      prep: {
+        title: 'Prep List',
+        items: {
+          '0': '2 tomatoes (~300g), score X on top',
+          '1': '3 eggs, lightly beaten with pinch of salt',
+          '2': 'Scallions, separate white and green parts',
+          '3': '1/4 tsp salt, 1 tsp sugar',
+        },
+      },
+      stepTips: {
+        '0': {
+          'te-wash-1': {
+            title: 'Easy Tomato Peeling',
+            content: 'Score X on tomato top, blanch in boiling water 30 sec, then shock in cold water. Skin peels right off!',
+          },
+          'te-wash-2': {
+            title: 'Remove Egg Odor',
+            content: 'Add 2 drops white vinegar or cooking wine when beating eggs. Removes eggy smell and makes eggs fluffier.',
+          },
+        },
+        '1': {
+          'te-cut-1': {
+            title: 'Cut Tomatoes Properly',
+            content: 'Cut tomatoes from the side, not from the stem. This releases juices first for better sauce. Keep chunks ~2cm.',
+          },
+        },
+        '2': {
+          'te-season-1': {
+            title: 'Season Eggs Right',
+            content: 'Only add a pinch of salt to eggs. For extra fluff, add 1 tbsp water or starch water. Eggs will be cloud-soft!',
+          },
+        },
+        '3': {
+          'te-bake-1': {
+            title: 'Hot Pan Cold Oil for Eggs',
+            content: 'Heat pan, add oil, turn to low heat. Pour eggs. Gently push when bottom sets. Remove at 80% doneness - don\'t overcook!',
+          },
+          'te-bake-2': {
+            title: 'Get That Tomato Sauce',
+            content: 'Saute white scallions, add tomatoes, cook on medium-low. Press with spatula back, add sugar to break down. Wait for that red oil!',
+          },
+          'te-bake-3': {
+            title: 'Add Eggs Last',
+            content: 'Once tomatoes are saucy, add eggs back. Toss quickly, garnish with green scallions, done! Don\'t stir too long.',
+          },
+        },
+        '4': {
+          'te-plate-1': {
+            title: 'Serve Hot',
+            content: 'Tomato and egg tastes best hot! Cold eggs get rubbery. Serve with steamed white rice - perfect match!',
+          },
+        },
+      },
+      mistakes: {
+        'te-mistake-1': {
+          title: 'Rubbery Eggs',
+          mistake: 'Cooking eggs too long or on too high heat.',
+          consequence: 'Eggs become dry and rubbery, like chewing eraser.',
+          solution: 'Hot pan cold oil, low heat, remove at 80% doneness. So juicy you\'ll want seconds!',
+        },
+        'te-mistake-2': {
+          title: 'No Tomato Sauce',
+          mistake: 'Tomatoes cut too big, not cooking long enough, heat too high.',
+          consequence: 'Watery mixture with separate tomato chunks - no saucy texture.',
+          solution: 'Cut small, medium-low heat, press with spatula, add sugar. Be patient 3-5 min.',
+        },
+        'te-mistake-3': {
+          title: 'Too Sour',
+          mistake: 'Forgot sugar, or tomatoes are very tart.',
+          consequence: 'So sour it makes you wince - can\'t eat with rice.',
+          solution: 'Always add sugar when cooking tomatoes! 1 tsp usually works, adjust to taste.',
+        },
+      },
+      proTips: {
+        'te-pro-1': {
+          title: 'Add Ketchup for Richness',
+          content: 'Add 1 tbsp ketchup when cooking tomatoes. Brighter color, richer flavor - just like restaurant style!',
+        },
+      },
+    },
+    'miso-salmon': {
+      prep: {
+        title: 'Prep List',
+        items: {
+          '0': '1 salmon fillet (~200g), pat dry with paper towels',
+          '1': '2 tbsp miso paste, 1 tbsp sake',
+          '2': '1 tsp honey, pinch of ginger',
+          '3': 'Black pepper, sea salt to taste',
+        },
+      },
+      stepTips: {
+        '0': {
+          'ms-wash-1': {
+            title: 'Pat Salmon Dry is KEY',
+            content: 'Thoroughly pat salmon dry with paper towels. This is the secret to crispy skin! Wet fish splatters and won\'t crisp.',
+          },
+        },
+        '1': {
+          'ms-cut-1': {
+            title: 'Keep the Skin On',
+            content: 'Salmon skin is rich in Omega-3 and gets deliciously crispy! Remove after cooking if you prefer - skin locks in juices.',
+          },
+        },
+        '2': {
+          'ms-season-1': {
+            title: 'Don\'t Apply Miso Directly',
+            content: 'Mix miso with sake and honey first. Direct miso is too salty and will burn when cooking.',
+          },
+          'ms-season-2': {
+            title: 'Don\'t Marinate Too Long',
+            content: '15-30 minutes is enough for salmon. Too long and the salt will break down the flesh, making it tough.',
+          },
+        },
+        '3': {
+          'ms-bake-1': {
+            title: 'Pan Sear Then Bake',
+            content: 'Medium-low heat, skin side down 3 min until golden crisp. Flip 1 min, brush miso, bake at 180°C for 8-10 min.',
+          },
+          'ms-bake-2': {
+            title: 'Don\'t Overcook',
+            content: 'Turn off at 80% doneness, let residual heat finish. Slightly pink center is perfect - fully cooked = dry.',
+          },
+        },
+        '4': {
+          'ms-plate-1': {
+            title: 'Garnish Nicely',
+            content: 'Sprinkle with scallions and sesame seeds, squeeze fresh lemon. Serve with rice or salad - perfect meal!',
+          },
+        },
+      },
+      mistakes: {
+        'ms-mistake-1': {
+          title: 'Skin Sticks & Tears',
+          mistake: 'Not drying properly, or flipping too early.',
+          consequence: 'Skin tears, sticks to pan - no crispy skin to enjoy.',
+          solution: 'Pat DRY! Don\'t move for 3 min, shake pan - if it slides, it\'s ready to flip.',
+        },
+        'ms-mistake-2': {
+          title: 'Dry Overcooked Salmon',
+          mistake: 'Too long in oven, temperature too high.',
+          consequence: 'Dry, chalky salmon - what a waste of good fish!',
+          solution: '180°C for 8-10 min. White flesh with slight pink center = done.',
+        },
+      },
+      proTips: {
+        'ms-pro-1': {
+          title: 'No Oven? No Problem!',
+          content: 'Cook entirely in pan: after searing both sides, brush miso, cover, low heat 5 min. Just as delicious!',
+        },
+      },
+    },
+  },
 } as const;

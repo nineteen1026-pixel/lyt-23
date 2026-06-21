@@ -242,6 +242,8 @@ function goNext() {
 }
 
 function handleGlobalKeyDown(event: KeyboardEvent) {
+  if (!settingsStore.keyboardNavigation) return;
+
   const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
   const modKey = isMac ? event.metaKey : event.ctrlKey;
   if (modKey) return;

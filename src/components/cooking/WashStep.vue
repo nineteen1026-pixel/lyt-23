@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { ref, onUnmounted, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useKeyboardNavigation, useLiveRegion, useReducedMotion, useHighContrast } from '@/composables/useAccessibility';
+import { useKeyboardNavigation, useLiveRegion, useReducedMotion, useHighContrast, useKeyboardEnabled } from '@/composables/useAccessibility';
 
 const { t } = useI18n();
 const { announce, liveRegionRef } = useLiveRegion();
 const { motionReduce } = useReducedMotion();
 const { isHighContrast } = useHighContrast();
+const { keyboardEnabled } = useKeyboardEnabled();
 
 const props = defineProps<{
   dishEmoji: string;
@@ -173,10 +174,10 @@ onUnmounted(cleanUp);
       <div
         ref="sinkRef"
         role="button"
-        tabindex="0"
+        :tabindex="keyboardEnabled ? 0 : -1"
         :aria-label="sinkAriaLabel"
         :aria-disabled="isWashing || isComplete"
-        class="relative w-full max-w-sm h-72 md:h-80 rounded-[2.5rem] overflow-hidden cursor-pointer select-none shadow-inner border-4 border-blue-200/60 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+        class="a11y-sink relative w-full max-w-sm h-72 md:h-80 rounded-[2.5rem] overflow-hidden cursor-pointer select-none shadow-inner border-4 border-blue-200/60 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
         :class="{
           'opacity-60 cursor-not-allowed': isWashing || isComplete,
         }"
@@ -278,10 +279,10 @@ onUnmounted(cleanUp);
         aria-valuemax="100"
         :aria-valuenow="progress"
         :aria-labelledby="'wash-progress-label'"
-        class="h-4 bg-cream-200 rounded-full overflow-hidden border-2 border-white shadow-inner"
+        class="a11y-progress-track h-4 bg-cream-200 rounded-full overflow-hidden border-2 border-white shadow-inner"
       >
         <div
-          class="h-full rounded-full transition-all duration-100 ease-out relative overflow-hidden"
+          class="a11y-progress-fill h-full rounded-full transition-all duration-100 ease-out relative overflow-hidden"
           :style="{
             width: `${progress}%`,
             background: 'linear-gradient(90deg, #4FB3E8, #7CC8F2, #4FB3E8)',

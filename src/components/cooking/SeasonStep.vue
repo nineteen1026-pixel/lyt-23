@@ -3,7 +3,7 @@ import { ref, computed, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useProfileStore } from '@/stores/profile';
 import { useDishI18n } from '@/composables/useDishI18n';
-import { useLiveRegion, useReducedMotion, useHighContrast } from '@/composables/useAccessibility';
+import { useLiveRegion, useReducedMotion, useHighContrast, useKeyboardEnabled } from '@/composables/useAccessibility';
 
 const { t } = useI18n();
 const { getLocalizedDishById } = useDishI18n();
@@ -11,6 +11,7 @@ const profileStore = useProfileStore();
 const { announce, liveRegionRef } = useLiveRegion();
 const { motionReduce } = useReducedMotion();
 const { isHighContrast } = useHighContrast();
+const { keyboardEnabled, ifKeyboardEnabled } = useKeyboardEnabled();
 
 const focusedSeasoningIndex = ref(0);
 
@@ -296,32 +297,34 @@ function sprinklingSeasoning(index: number) {
   }, motionReduce.value ? 100 : 1200);
 }
 
-function handleSeasoningKeyDown(event: KeyboardEvent, index: number) {
-  switch (event.key) {
-    case 'Enter':
-    case ' ':
-      event.preventDefault();
-      sprinklingSeasoning(index);
-      break;
-    case 'ArrowRight':
-    case 'ArrowDown':
-      event.preventDefault();
-      navigateSeasoning(1);
-      break;
-    case 'ArrowLeft':
-    case 'ArrowUp':
-      event.preventDefault();
-      navigateSeasoning(-1);
-      break;
-    case 'Home':
-      event.preventDefault();
-      focusedSeasoningIndex.value = 0;
-      break;
-    case 'End':
-      event.preventDefault();
-      focusedSeasoningIndex.value = props.seasonings.length - 1;
-      break;
-  }
+function createSeasoningKeyHandler(index: number) {
+  return ifKeyboardEnabled((event: KeyboardEvent) => {
+    switch (event.key) {
+      case 'Enter':
+      case ' ':
+        event.preventDefault();
+        sprinklingSeasoning(index);
+        break;
+      case 'ArrowRight':
+      case 'ArrowDown':
+        event.preventDefault();
+        navigateSeasoning(1);
+        break;
+      case 'ArrowLeft':
+      case 'ArrowUp':
+        event.preventDefault();
+        navigateSeasoning(-1);
+        break;
+      case 'Home':
+        event.preventDefault();
+        focusedSeasoningIndex.value = 0;
+        break;
+      case 'End':
+        event.preventDefault();
+        focusedSeasoningIndex.value = props.seasonings.length - 1;
+        break;
+    }
+  });
 }
 
 function navigateSeasoning(direction: number) {
@@ -430,12 +433,12 @@ function handleMix() {
   }, motionReduce.value ? 300 : 2200);
 }
 
-function handleMixKeyDown(event: KeyboardEvent) {
+const handleMixKeyDown = ifKeyboardEnabled((event: KeyboardEvent) => {
   if (event.key === 'Enter' || event.key === ' ') {
     event.preventDefault();
     handleMix();
   }
-}
+});
 
 const overlayLayers = computed(() => {
   return props.seasonings.map((s) => ({
@@ -470,7 +473,7 @@ onUnmounted(cleanUp);
 
     <div class="relative mx-auto mb-6" role="group" :aria-label="t('steps.season.subtitle')" style="width: 360px; height: 340px;">
       <div
-        class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-0"
+        class="a11y-season-plate absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-0"
         style="
           width: 260px;
           height: 200px;
@@ -566,7 +569,7 @@ onUnmounted(cleanUp);
             :key="'bottle-' + seasoning"
             data-seasoning-bottle
             role="button"
-            :tabindex="seasoningStates.get(seasoning) === 'skipped' ? -1 : 0"
+            :tabindex="seasoningStates.get(seasoning) === 'skipped' ? -1 : (keyboardEnabled ? 0 : -1)"
             :aria-label="`${seasoning}，${seasoningStates.get(seasoning) === 'done' ? '已添加' : seasoningStates.get(seasoning) === 'sprinkling' ? '添加中' : seasoningStates.get(seasoning) === 'skipped' ? '已跳过' : '点击添加'}`"
             :aria-disabled="seasoningStates.get(seasoning) !== 'idle'"
             class="flex flex-col items-center select-none focus:outline-none focus-visible:ring-4 focus-visible:ring-apricot-500 focus-visible:ring-offset-2 rounded-xl p-1"
@@ -576,7 +579,7 @@ onUnmounted(cleanUp);
               'opacity-50 grayscale': seasoningStates.get(seasoning) === 'skipped',
             }"
             @click="sprinklingSeasoning(index)"
-            @keydown="(e) => handleSeasoningKeyDown(e, index)"
+            @keydown="createSeasoningKeyHandler(index)"
           >
             <div
               class="relative"
@@ -587,7 +590,7 @@ onUnmounted(cleanUp);
               }"
             >
               <div
-                class="relative flex items-center justify-center"
+                class="a11y-season-bottle relative flex items-center justify-center"
                 :style="{
                   width: '70px',
                   height: '80px',
@@ -718,10 +721,10 @@ onUnmounted(cleanUp);
         :aria-valuemax="TOTAL"
         :aria-valuenow="sprinkledCount + initialSkipped"
         aria-labelledby="season-progress-label"
-        class="w-full h-3 bg-cream-200 rounded-full overflow-hidden border border-white/60"
+        class="a11y-progress-track w-full h-3 bg-cream-200 rounded-full overflow-hidden border border-white/60"
       >
         <div
-          class="h-full bg-gradient-to-r from-apricot-400 via-apricot-500 to-apricot-600 rounded-full transition-all duration-400 ease-out"
+          class="a11y-progress-fill h-full bg-gradient-to-r from-apricot-400 via-apricot-500 to-apricot-600 rounded-full transition-all duration-400 ease-out"
           :style="{ width: `${TOTAL > 0 ? ((sprinkledCount + initialSkipped) / TOTAL) * 100 : 0}%` }"
         />
       </div>

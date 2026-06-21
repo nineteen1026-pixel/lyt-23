@@ -2,12 +2,13 @@
 import { ref, computed, watch, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useTimerStore } from '@/stores/timer';
-import { useLiveRegion, useReducedMotion, useHighContrast } from '@/composables/useAccessibility';
+import { useLiveRegion, useReducedMotion, useHighContrast, useKeyboardEnabled } from '@/composables/useAccessibility';
 
 const { t } = useI18n();
 const { announce, liveRegionRef } = useLiveRegion();
 const { motionReduce } = useReducedMotion();
 const { isHighContrast } = useHighContrast();
+const { keyboardEnabled, ifKeyboardEnabled } = useKeyboardEnabled();
 
 const props = withDefaults(defineProps<{
   dishEmoji: string;
@@ -119,12 +120,12 @@ function handleMainAction() {
   }
 }
 
-function handleMainKeyDown(event: KeyboardEvent) {
+const handleMainKeyDown = ifKeyboardEnabled((event: KeyboardEvent) => {
   if (event.key === 'Enter' || event.key === ' ') {
     event.preventDefault();
     handleMainAction();
   }
-}
+});
 
 function startInsert() {
   stage.value = 'inserting';
@@ -206,12 +207,12 @@ function forceFinishFromTimer() {
   finishBaking();
 }
 
-function handleOvenKeyDown(event: KeyboardEvent) {
+const handleOvenKeyDown = ifKeyboardEnabled((event: KeyboardEvent) => {
   if (event.key === 'Enter' || event.key === ' ') {
     event.preventDefault();
     handleMainAction();
   }
-}
+});
 
 const ovenAriaLabel = computed(() => {
   switch (stage.value) {
@@ -269,7 +270,7 @@ onUnmounted(cleanUp);
     <div class="flex justify-center mb-6">
       <div
         role="button"
-        tabindex="0"
+        :tabindex="keyboardEnabled ? 0 : -1"
         :aria-label="ovenAriaLabel"
         :aria-disabled="stage === 'baking' || stage === 'inserting' || stage === 'closing'"
         class="relative cursor-pointer focus:outline-none focus-visible:ring-4 focus-visible:ring-apricot-500 focus-visible:ring-offset-2 rounded-[2rem]"
@@ -278,7 +279,7 @@ onUnmounted(cleanUp);
         @keydown="handleOvenKeyDown"
       >
         <div
-          class="absolute rounded-[2rem] overflow-hidden"
+          class="a11y-oven absolute rounded-[2rem] overflow-hidden"
           style="
             inset: 0;
             background: linear-gradient(145deg, #3a3a3a 0%, #2a2a2a 50%, #1f1f1f 100%);
@@ -290,7 +291,7 @@ onUnmounted(cleanUp);
           "
         >
           <div
-            class="absolute rounded-xl overflow-hidden"
+            class="a11y-oven-inner absolute rounded-xl overflow-hidden"
             style="
               top: 60px;
               left: 24px;
@@ -474,7 +475,7 @@ onUnmounted(cleanUp);
         </div>
 
         <div
-          class="absolute rounded-[2rem] transition-transform duration-700 ease-out z-20"
+          class="a11y-oven-door absolute rounded-[2rem] transition-transform duration-700 ease-out z-20"
           :style="{
             inset: 0,
             transformStyle: 'preserve-3d',
@@ -490,7 +491,7 @@ onUnmounted(cleanUp);
           }"
         >
           <div
-            class="absolute rounded-xl overflow-hidden"
+            class="a11y-oven-door absolute rounded-xl overflow-hidden"
             style="
               top: 60px;
               left: 24px;
@@ -668,10 +669,10 @@ onUnmounted(cleanUp);
           aria-valuemax="100"
           :aria-valuenow="effectiveProgress"
           aria-labelledby="bake-progress-label"
-          class="h-4 bg-cream-200 rounded-full overflow-hidden border-2 border-white shadow-inner"
+          class="a11y-progress-track h-4 bg-cream-200 rounded-full overflow-hidden border-2 border-white shadow-inner"
         >
           <div
-            class="h-full rounded-full transition-all duration-150 ease-out relative overflow-hidden"
+            class="a11y-progress-fill h-full rounded-full transition-all duration-150 ease-out relative overflow-hidden"
             :style="{
               width: `${effectiveProgress}%`,
               background: stage === 'done'
@@ -700,10 +701,10 @@ onUnmounted(cleanUp);
           aria-valuemax="180"
           :aria-valuenow="effectiveTemperature"
           aria-labelledby="bake-temp-label"
-          class="h-4 bg-cream-200 rounded-full overflow-hidden border-2 border-white shadow-inner"
+          class="a11y-progress-track h-4 bg-cream-200 rounded-full overflow-hidden border-2 border-white shadow-inner"
         >
           <div
-            class="h-full rounded-full transition-all duration-150 ease-out relative"
+            class="a11y-progress-fill h-full rounded-full transition-all duration-150 ease-out relative"
             :style="{
               width: `${temperaturePercent}%`,
               background: `linear-gradient(90deg, #FFD166 0%, #FF9F43 40%, #FF6B35 70%, #E63946 100%)`,

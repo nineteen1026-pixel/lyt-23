@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useLiveRegion, useReducedMotion, useHighContrast } from '@/composables/useAccessibility';
+import { useLiveRegion, useReducedMotion, useHighContrast, useKeyboardEnabled } from '@/composables/useAccessibility';
 
 const { t } = useI18n();
 const { announce, liveRegionRef } = useLiveRegion();
 const { motionReduce } = useReducedMotion();
 const { isHighContrast } = useHighContrast();
+const { keyboardEnabled, ifKeyboardEnabled } = useKeyboardEnabled();
 
 const props = defineProps<{
   dishEmoji: string;
@@ -103,12 +104,12 @@ function handleCut() {
   }, 300);
 }
 
-function handleKeyDown(event: KeyboardEvent) {
+const handleKeyDown = ifKeyboardEnabled((event: KeyboardEvent) => {
   if (event.key === 'Enter' || event.key === ' ') {
     event.preventDefault();
     handleCut();
   }
-}
+});
 </script>
 
 <template>
@@ -126,10 +127,10 @@ function handleKeyDown(event: KeyboardEvent) {
     </div>
 
     <div
-      class="relative mx-auto mb-6 cursor-pointer focus:outline-none focus-visible:ring-4 focus-visible:ring-apricot-500 focus-visible:ring-offset-2 rounded-3xl"
+      class="a11y-cutting-board relative mx-auto mb-6 cursor-pointer focus:outline-none focus-visible:ring-4 focus-visible:ring-apricot-500 focus-visible:ring-offset-2 rounded-3xl"
       style="width: 340px; height: 260px;"
       role="button"
-      tabindex="0"
+      :tabindex="keyboardEnabled ? 0 : -1"
       :aria-label="cuttingBoardAriaLabel"
       :aria-disabled="isCutting && !cutCompleted"
       @click="handleCut"
@@ -141,7 +142,7 @@ function handleKeyDown(event: KeyboardEvent) {
         :class="boardShakeKey > 0 && !motionReduce ? 'animate-shake' : ''"
       >
         <div
-          class="relative rounded-3xl shadow-card"
+          class="a11y-cutting-board relative rounded-3xl shadow-card"
           style="
             width: 300px;
             height: 200px;
@@ -273,10 +274,10 @@ function handleKeyDown(event: KeyboardEvent) {
         :aria-valuemax="TOTAL_CUTS"
         :aria-valuenow="Math.min(cuts, TOTAL_CUTS)"
         aria-labelledby="cut-progress-label"
-        class="w-full h-3 bg-cream-200 rounded-full overflow-hidden border border-white/60"
+        class="a11y-progress-track w-full h-3 bg-cream-200 rounded-full overflow-hidden border border-white/60"
       >
         <div
-          class="h-full bg-gradient-to-r from-apricot-400 via-apricot-500 to-apricot-600 rounded-full transition-all duration-400 ease-out"
+          class="a11y-progress-fill h-full bg-gradient-to-r from-apricot-400 via-apricot-500 to-apricot-600 rounded-full transition-all duration-400 ease-out"
           :style="{ width: `${(Math.min(cuts, TOTAL_CUTS) / TOTAL_CUTS) * 100}%` }"
         />
       </div>

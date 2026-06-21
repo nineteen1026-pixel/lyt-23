@@ -167,6 +167,24 @@ export function useHighContrast() {
   };
 }
 
+export function useKeyboardEnabled() {
+  const settingsStore = useSettingsStore();
+
+  const keyboardEnabled = computed(() => settingsStore.keyboardNavigation);
+
+  const ifKeyboardEnabled = (handler: (e: KeyboardEvent) => void) => {
+    return (event: KeyboardEvent) => {
+      if (!settingsStore.keyboardNavigation) return;
+      handler(event);
+    };
+  };
+
+  return {
+    keyboardEnabled,
+    ifKeyboardEnabled,
+  };
+}
+
 let skipLinkShown = false;
 
 export function useSkipLink(targetId: string) {

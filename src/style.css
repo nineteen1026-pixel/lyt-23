@@ -318,3 +318,122 @@ html.focus-visible-enabled *:focus {
   pointer-events: none;
   border-radius: 50%;
 }
+
+/* ====== 高对比模式 - 交互区域样式 ====== */
+
+/* WashStep 水槽 */
+html.hc-light .a11y-sink {
+  background: #FFFFFF !important;
+  border: 3px solid #000000 !important;
+  box-shadow: none !important;
+}
+html.hc-dark .a11y-sink {
+  background: #000000 !important;
+  border: 3px solid #FFFF00 !important;
+  box-shadow: none !important;
+}
+
+/* CutStep 切菜板 */
+html.hc-light .a11y-cutting-board {
+  background: #FFFFFF !important;
+  border: 3px solid #000000 !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+html.hc-dark .a11y-cutting-board {
+  background: #000000 !important;
+  border: 3px solid #FFFF00 !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+/* SeasonStep 盘子 */
+html.hc-light .a11y-season-plate {
+  background: #FFFFFF !important;
+  border: 3px solid #000000 !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+html.hc-dark .a11y-season-plate {
+  background: #000000 !important;
+  border: 3px solid #FFFF00 !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+/* SeasonStep 调料瓶 */
+html.hc-light .a11y-season-bottle {
+  background: #FFFFFF !important;
+  border: 3px solid #000000 !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+html.hc-dark .a11y-season-bottle {
+  background: #000000 !important;
+  border: 3px solid #FFFF00 !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+/* BakeStep 烤箱外框 */
+html.hc-light .a11y-oven {
+  background: #FFFFFF !important;
+  border: 3px solid #000000 !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+html.hc-dark .a11y-oven {
+  background: #000000 !important;
+  border: 3px solid #FFFF00 !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+/* BakeStep 烤箱内腔 */
+html.hc-light .a11y-oven-inner {
+  background: #F5F5F5 !important;
+  border: 2px solid #000000 !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+html.hc-dark .a11y-oven-inner {
+  background: #1A1A1A !important;
+  border: 2px solid #FFFF00 !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+/* BakeStep 烤箱门 */
+html.hc-light .a11y-oven-door {
+  background: #FFFFFF !important;
+  border: 2px solid #000000 !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+html.hc-dark .a11y-oven-door {
+  background: #000000 !important;
+  border: 2px solid #FFFF00 !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+/* 进度条高对比覆盖 */
+html.hc-light .a11y-progress-track {
+  background: #FFFFFF !important;
+  border: 2px solid #000000 !important;
+  box-shadow: none !important;
+}
+html.hc-dark .a11y-progress-track {
+  background: #000000 !important;
+  border: 2px solid #FFFF00 !important;
+  box-shadow: none !important;
+}
+
+html.hc-light .a11y-progress-fill {
+  background: #000000 !important;
+  background-image: none !important;
+}
+html.hc-dark .a11y-progress-fill {
+  background: #FFFF00 !important;
+  background-image: none !important;
+}

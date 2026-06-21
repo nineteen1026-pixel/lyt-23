@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import { ArrowLeft, User, AlertTriangle, Sparkles, RotateCcw, Volume2, Globe } from 'lucide-vue-next';
+import { ArrowLeft, User, AlertTriangle, Sparkles, RotateCcw, Volume2, Globe, MessageSquareHeart } from 'lucide-vue-next';
 import {
   useProfileStore,
   ALLERGENS,
@@ -20,6 +20,8 @@ import {
 } from '@/stores/settings';
 import { useSpeech } from '@/composables/useSpeech';
 import LanguageSelector from '@/components/settings/LanguageSelector.vue';
+import FeedbackForm from '@/components/feedback/FeedbackForm.vue';
+import FeedbackQueue from '@/components/feedback/FeedbackQueue.vue';
 
 const router = useRouter();
 const profileStore = useProfileStore();
@@ -342,6 +344,18 @@ function handleReset() {
     </section>
 
     <section class="mb-10 animate-fade-slide" style="animation-delay: 0.2s">
+      <div class="flex items-center gap-2 mb-4">
+        <MessageSquareHeart class="text-apricot-500" :size="22" />
+        <h2 class="text-display text-xl text-brown-900">意见反馈</h2>
+        <span class="text-xs text-brown-800/60 ml-1">（您的声音让小厨房变得更好）</span>
+      </div>
+      <div class="grid md:grid-cols-2 gap-5">
+        <FeedbackForm />
+        <FeedbackQueue />
+      </div>
+    </section>
+
+    <section class="mb-10 animate-fade-slide" style="animation-delay: 0.225s">
       <div class="card-soft p-5 bg-gradient-to-br from-apricot-50 to-cream-100 border-apricot-200">
         <div class="flex items-start gap-3">
           <div class="text-3xl">💡</div>

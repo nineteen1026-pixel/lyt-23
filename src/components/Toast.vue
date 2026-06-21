@@ -58,7 +58,7 @@ function getIconClass(type: ToastType) {
                 <component v-else :is="IconForType[toast.type]" :size="20" :class="getIconClass(toast.type)" />
               </div>
               <div class="flex-1 min-w-0">
-                <div class="text-sm font-medium text-brown-900 leading-snug">
+                <div class="text-sm font-medium text-brown-900 leading-snug whitespace-pre-wrap break-words">
                   {{ toast.message }}
                 </div>
               </div>

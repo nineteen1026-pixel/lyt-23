@@ -5,6 +5,7 @@ import { CalendarCheck, Flame, Award, User, BarChart3, Timer, Share2 } from 'luc
 import { useCookingStore } from '@/stores/cooking';
 import { useProfileStore } from '@/stores/profile';
 import { useTimerStore } from '@/stores/timer';
+import { useSettingsStore } from '@/stores/settings';
 import { unlocks } from '@/data/unlocks';
 
 const emit = defineEmits<{
@@ -14,6 +15,7 @@ const emit = defineEmits<{
 const store = useCookingStore();
 const profileStore = useProfileStore();
 const timerStore = useTimerStore();
+const settingsStore = useSettingsStore();
 const router = useRouter();
 
 const activeApronData = computed(() =>
@@ -67,7 +69,7 @@ function getApronBackground(color: string, stripe: string | null): string {
       </div>
       <div class="flex items-center gap-2">
         <div class="w-9 h-9 rounded-full bg-matcha-500/15 flex items-center justify-center">
-          <span v-if="store.streakDays > 0" class="flame-icon text-lg">🔥</span>
+          <span v-if="store.streakDays > 0" :class="settingsStore.reducedMotion ? 'text-lg' : 'flame-icon text-lg'">🔥</span>
           <Flame v-else :size="18" :stroke-width="2.2" class="text-matcha-600" />
         </div>
         <div>

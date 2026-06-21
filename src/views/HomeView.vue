@@ -95,6 +95,21 @@ onMounted(() => {
   }
 });
 
+function getLocalDateStr(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function diffDaysLocal(date1: string, date2: string): number {
+  const d1 = new Date(date1);
+  const d2 = new Date(date2);
+  d1.setHours(0, 0, 0, 0);
+  d2.setHours(0, 0, 0, 0);
+  const msPerDay = 1000 * 60 * 60 * 24;
+  return Math.round((d1.getTime() - d2.getTime()) / msPerDay);
+}
+
+const LAST_BROKEN_STREAK_TOAST_KEY = 'cozy-cooking-last-broken-streak-toast';
+
 function checkBrokenStreak(): void {
   if (store.totalDays === 0) return;
   if (store.isCheckedInToday) return;
@@ -104,17 +119,24 @@ function checkBrokenStreak(): void {
   const lastDate = store.lastCheckInDate;
   if (!lastDate) return;
 
-  const today = new Date();
-  const last = new Date(lastDate);
-  const diffTime = Math.abs(today.getTime() - last.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  const todayStr = getLocalDateStr(new Date());
+  const diffDays = diffDaysLocal(todayStr, lastDate);
 
-  if (diffDays >= 2) {
-    toastStore.info(
-      `🔥 断签提醒：你已经 ${diffDays} 天没打卡啦～\n快去做一道菜，延续你的烹饪热情！`,
-      '💔',
-      4000
-    );
+  if (diffDays < 2) return;
+
+  const lastToastDate = typeof localStorage !== 'undefined'
+    ? localStorage.getItem(LAST_BROKEN_STREAK_TOAST_KEY)
+    : null;
+  if (lastToastDate === todayStr) return;
+
+  toastStore.info(
+    `🔥 断签提醒：你已经 ${diffDays} 天没打卡啦～\n快去做一道菜，延续你的烹饪热情！`,
+    '💔',
+    4000
+  );
+
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem(LAST_BROKEN_STREAK_TOAST_KEY, todayStr);
   }
 }
 

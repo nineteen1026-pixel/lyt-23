@@ -736,6 +736,7 @@ function handleSaveNote(data: { content: string; rating: 1 | 2 | 3 | 4 | 5 }) {
         <UnlockModal
           v-if="showUnlockModal"
           :new-items="pendingUnlockItems"
+          :total-days="store.totalDays"
           @close="handleUnlockModalClose"
         />
       </Transition>

@@ -1,4 +1,5 @@
 import { isDecorationAvailableThisMonth, isApronAvailableThisMonth } from '@/data/seasonal';
+import { themes, type KitchenBackground, type CounterMaterial } from '@/data/themes';
 
 export interface Decoration {
   id: string;
@@ -19,6 +20,26 @@ export interface Apron {
 export interface UnlockData {
   decorations: Decoration[];
   aprons: Apron[];
+}
+
+export type UnlockItemType = 'decoration' | 'apron' | 'background' | 'counter';
+
+export interface PreviewUnlockItem {
+  type: UnlockItemType;
+  id: string;
+  name: string;
+  emoji?: string;
+  color?: string;
+  stripe?: string | null;
+  description?: string;
+  threshold: number;
+}
+
+export interface NextThresholdReward {
+  threshold: number;
+  items: PreviewUnlockItem[];
+  daysRemaining: number;
+  progressPercent: number;
 }
 
 export const unlocks: UnlockData = {
@@ -53,6 +74,8 @@ export function getAllThresholds(): number[] {
   const set = new Set<number>();
   unlocks.decorations.forEach((d) => set.add(d.threshold));
   unlocks.aprons.forEach((a) => set.add(a.threshold));
+  themes.backgrounds.forEach((b) => set.add(b.threshold));
+  themes.counters.forEach((c) => set.add(c.threshold));
   return Array.from(set).sort((a, b) => a - b);
 }
 
@@ -73,4 +96,109 @@ export function checkNewUnlocks(prevDays: number, newDays: number): {
       isApronAvailableThisMonth(a.id),
   );
   return { newDecorations, newAprons };
+}
+
+export function getMaxThreshold(): number {
+  const allThresholds = getAllThresholds();
+  return Math.max(...allThresholds, 1);
+}
+
+export function getNextThresholdReward(currentDays: number): NextThresholdReward | null {
+  const allThresholds = getAllThresholds();
+  const nextThreshold = allThresholds.find((t) => t > currentDays);
+
+  if (!nextThreshold) {
+    return null;
+  }
+
+  const items: PreviewUnlockItem[] = [];
+
+  unlocks.decorations
+    .filter((d) => d.threshold === nextThreshold && isDecorationAvailableThisMonth(d.id))
+    .forEach((d) => {
+      items.push({
+        type: 'decoration',
+        id: d.id,
+        name: d.name,
+        emoji: d.emoji,
+        description: d.description,
+        threshold: d.threshold,
+      });
+    });
+
+  unlocks.aprons
+    .filter((a) => a.threshold === nextThreshold && isApronAvailableThisMonth(a.id))
+    .forEach((a) => {
+      items.push({
+        type: 'apron',
+        id: a.id,
+        name: a.name,
+        color: a.color,
+        stripe: a.stripe,
+        threshold: a.threshold,
+      });
+    });
+
+  themes.backgrounds
+    .filter((b) => b.threshold === nextThreshold)
+    .forEach((b) => {
+      items.push({
+        type: 'background',
+        id: b.id,
+        name: b.name,
+        emoji: b.emoji,
+        description: b.description,
+        threshold: b.threshold,
+      });
+    });
+
+  themes.counters
+    .filter((c) => c.threshold === nextThreshold)
+    .forEach((c) => {
+      items.push({
+        type: 'counter',
+        id: c.id,
+        name: c.name,
+        emoji: c.emoji,
+        description: c.description,
+        threshold: c.threshold,
+      });
+    });
+
+  const maxThreshold = getMaxThreshold();
+  const prevThreshold = allThresholds.filter((t) => t <= currentDays).pop() || 0;
+
+  return {
+    threshold: nextThreshold,
+    items,
+    daysRemaining: nextThreshold - currentDays,
+    progressPercent: currentDays >= nextThreshold
+      ? 100
+      : Math.min(
+          ((currentDays - prevThreshold) / (nextThreshold - prevThreshold)) * 100,
+          100,
+        ),
+  };
+}
+
+export function getProgressInfo(currentDays: number): {
+  currentThreshold: number;
+  nextThreshold: number | null;
+  maxThreshold: number;
+  overallPercent: number;
+  thresholds: number[];
+} {
+  const thresholds = getAllThresholds();
+  const maxThreshold = getMaxThreshold();
+  const currentThreshold = thresholds.filter((t) => t <= currentDays).pop() || 0;
+  const nextThreshold = thresholds.find((t) => t > currentDays) || null;
+  const overallPercent = Math.min((currentDays / maxThreshold) * 100, 100);
+
+  return {
+    currentThreshold,
+    nextThreshold,
+    maxThreshold,
+    overallPercent,
+    thresholds,
+  };
 }

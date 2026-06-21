@@ -60,6 +60,13 @@ export default {
         'pop-in': 'popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
         'fade-slide': 'fadeSlide 0.4s ease',
         'breath-ring': 'breathRing 1.8s ease-in-out infinite',
+        'unlock-glow': 'unlockGlow 1.5s ease-in-out infinite',
+        'unlock-sparkle': 'unlockSparkle 1s ease-out forwards',
+        'unlock-burst': 'unlockBurst 0.8s ease-out forwards',
+        'unlock-reveal': 'unlockReveal 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
+        'unlock-shine': 'unlockShine 2s ease-in-out infinite',
+        'confetti-fall': 'confettiFall 2.5s ease-out forwards',
+        'progress-glow': 'progressGlow 2s ease-in-out infinite',
       },
       keyframes: {
         float: {
@@ -90,6 +97,37 @@ export default {
         breathRing: {
           '0%, 100%': { transform: 'scale(1)', opacity: '0.6' },
           '50%': { transform: 'scale(1.35)', opacity: '0' },
+        },
+        unlockGlow: {
+          '0%, 100%': { boxShadow: '0 0 20px rgba(255, 166, 109, 0.4), 0 0 40px rgba(255, 140, 66, 0.2)' },
+          '50%': { boxShadow: '0 0 40px rgba(255, 166, 109, 0.7), 0 0 80px rgba(255, 140, 66, 0.4)' },
+        },
+        unlockSparkle: {
+          '0%': { transform: 'scale(0) rotate(0deg)', opacity: '1' },
+          '50%': { transform: 'scale(1.2) rotate(180deg)', opacity: '1' },
+          '100%': { transform: 'scale(0) rotate(360deg)', opacity: '0' },
+        },
+        unlockBurst: {
+          '0%': { transform: 'scale(0)', opacity: '1' },
+          '50%': { opacity: '0.8' },
+          '100%': { transform: 'scale(2.5)', opacity: '0' },
+        },
+        unlockReveal: {
+          '0%': { transform: 'scale(0.3) rotate(-10deg)', opacity: '0' },
+          '60%': { transform: 'scale(1.1) rotate(3deg)', opacity: '1' },
+          '100%': { transform: 'scale(1) rotate(0deg)', opacity: '1' },
+        },
+        unlockShine: {
+          '0%': { backgroundPosition: '-200% center' },
+          '100%': { backgroundPosition: '200% center' },
+        },
+        confettiFall: {
+          '0%': { transform: 'translateY(-20px) rotate(0deg)', opacity: '1' },
+          '100%': { transform: 'translateY(100vh) rotate(720deg)', opacity: '0' },
+        },
+        progressGlow: {
+          '0%, 100%': { boxShadow: '0 0 6px rgba(255, 140, 66, 0.5)' },
+          '50%': { boxShadow: '0 0 16px rgba(255, 140, 66, 0.9)' },
         },
       },
     },

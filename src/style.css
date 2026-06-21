@@ -319,6 +319,69 @@ html.focus-visible-enabled *:focus {
   border-radius: 50%;
 }
 
+.unlock-confetti {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  pointer-events: none;
+  z-index: 60;
+}
+
+.unlock-sparkle {
+  position: absolute;
+  pointer-events: none;
+  z-index: 55;
+}
+
+.unlock-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 166, 109, 0.6);
+  pointer-events: none;
+}
+
+.unlock-shine-text {
+  background: linear-gradient(
+    90deg,
+    #FF8C42 0%,
+    #FFA66D 25%,
+    #FFD4B3 50%,
+    #FFA66D 75%,
+    #FF8C42 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: unlockShine 2s ease-in-out infinite;
+}
+
+.unlock-glow-border {
+  position: relative;
+}
+.unlock-glow-border::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, #FFA66D, #FF8C42, #A7C957, #FFA66D);
+  background-size: 300% 300%;
+  z-index: -1;
+  animation: unlockShine 3s linear infinite;
+}
+
+.progress-dot-pulse {
+  position: relative;
+}
+.progress-dot-pulse::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(255, 140, 66, 0.4);
+  animation: breathRing 1.5s ease-in-out infinite;
+}
+
 /* ====== 高对比模式 - 交互区域样式 ====== */
 
 /* WashStep 水槽 */

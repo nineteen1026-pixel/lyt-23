@@ -474,7 +474,7 @@ function selectDish(id: string) {
               </span>
             </div>
             <p class="text-xs text-brown-800/60">
-              {{ formatTimeAgo(lastCookedDish.completedAt) }} 刚做过 · 约 {{ lastCookedDish.dish.time }} 分钟 · 难度 {{ '⭐'.repeat(lastCookedDish.dish.difficulty) }}
+              上次做：{{ formatTimeAgo(lastCookedDish.completedAt) }} · 约 {{ lastCookedDish.dish.time }} 分钟 · 难度 {{ '⭐'.repeat(lastCookedDish.dish.difficulty) }}
             </p>
           </div>
           <div class="shrink-0 text-apricot-500">

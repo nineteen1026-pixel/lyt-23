@@ -51,6 +51,11 @@ function todayStr(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+function toLocalDateStr(isoString: string): string {
+  const d = new Date(isoString);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 function isYesterday(dateStr: string): boolean {
   const today = new Date();
   const target = new Date(dateStr);
@@ -104,7 +109,7 @@ export const useCookingStore = defineStore(
 
     const todayCookingCount = computed(() => {
       const today = todayStr();
-      return cookingHistory.value.filter((r) => r.completedAt.startsWith(today)).length;
+      return cookingHistory.value.filter((r) => toLocalDateStr(r.completedAt) === today).length;
     });
 
     const lastCookingRecord = computed(() => {
@@ -177,7 +182,7 @@ export const useCookingStore = defineStore(
     const todayNutrition = computed((): NutritionInfo => {
       const today = todayStr();
       return cookingHistory.value
-        .filter((r) => r.completedAt.startsWith(today))
+        .filter((r) => toLocalDateStr(r.completedAt) === today)
         .reduce(
           (acc, record) => {
             if (record.nutrition) {

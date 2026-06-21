@@ -66,12 +66,13 @@ function getApronBackground(color: string, stripe: string | null): string {
         </div>
       </div>
       <div class="flex items-center gap-2">
-        <div class="w-9 h-9 rounded-full bg-matcha-500/15 flex items-center justify-center text-matcha-600">
-          <Flame :size="18" :stroke-width="2.2" />
+        <div class="w-9 h-9 rounded-full bg-matcha-500/15 flex items-center justify-center">
+          <span v-if="store.streakDays > 0" class="flame-icon text-lg">🔥</span>
+          <Flame v-else :size="18" :stroke-width="2.2" class="text-matcha-600" />
         </div>
         <div>
           <div class="text-[11px] text-brown-800/60 leading-none">连续打卡</div>
-          <div class="text-display text-2xl text-matcha-600 leading-tight">{{ store.streakDays }}<span class="text-sm ml-0.5">天</span></div>
+          <div class="text-display text-2xl leading-tight" :class="store.streakDays > 0 ? 'text-apricot-600' : 'text-matcha-600'">{{ store.streakDays }}<span class="text-sm ml-0.5">天</span></div>
         </div>
       </div>
     </div>
@@ -164,3 +165,42 @@ function getApronBackground(color: string, stripe: string | null): string {
     </div>
   </div>
 </template>
+
+<style scoped>
+.flame-icon {
+  display: inline-block;
+  animation: flame-flicker 0.6s ease-in-out infinite alternate,
+             flame-glow 1.5s ease-in-out infinite;
+  filter: drop-shadow(0 0 4px rgba(255, 140, 66, 0.6));
+  transform-origin: center bottom;
+}
+
+@keyframes flame-flicker {
+  0% {
+    transform: scale(1) rotate(-2deg);
+  }
+  25% {
+    transform: scale(1.05) rotate(1deg);
+  }
+  50% {
+    transform: scale(0.98) rotate(-1deg);
+  }
+  75% {
+    transform: scale(1.02) rotate(2deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes flame-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 4px rgba(255, 140, 66, 0.6))
+            drop-shadow(0 0 8px rgba(255, 107, 53, 0.3));
+  }
+  50% {
+    filter: drop-shadow(0 0 8px rgba(255, 140, 66, 0.8))
+            drop-shadow(0 0 16px rgba(255, 107, 53, 0.5));
+  }
+}
+</style>

@@ -30,6 +30,7 @@ import { useOnboardingStore } from '@/stores/onboarding';
 import ShareInviteModal from '@/components/share/ShareInviteModal.vue';
 import type { ShareCardData } from '@/data/share';
 import { useDishI18n } from '@/composables/useDishI18n';
+import { useToastStore } from '@/stores/toast';
 
 const router = useRouter();
 const store = useCookingStore();
@@ -37,6 +38,7 @@ const profileStore = useProfileStore();
 const challengesStore = useChallengesStore();
 const onboardingStore = useOnboardingStore();
 const favoritesStore = useFavoritesStore();
+const toastStore = useToastStore();
 const { getLocalizedDishById } = useDishI18n();
 
 const showChallengeList = ref(false);
@@ -85,12 +87,36 @@ function handleMoveDown(dishId: string, e: Event) {
 
 onMounted(() => {
   challengesStore.resetExpiredChallenges();
+  checkBrokenStreak();
   if (!onboardingStore.isCompleted) {
     setTimeout(() => {
       onboardingStore.startFlow('home');
     }, 500);
   }
 });
+
+function checkBrokenStreak(): void {
+  if (store.totalDays === 0) return;
+  if (store.isCheckedInToday) return;
+  if (store.isCheckedInYesterday) return;
+  if (store.streakDays > 0) return;
+
+  const lastDate = store.lastCheckInDate;
+  if (!lastDate) return;
+
+  const today = new Date();
+  const last = new Date(lastDate);
+  const diffTime = Math.abs(today.getTime() - last.getTime());
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays >= 2) {
+    toastStore.info(
+      `🔥 断签提醒：你已经 ${diffDays} 天没打卡啦～\n快去做一道菜，延续你的烹饪热情！`,
+      '💔',
+      4000
+    );
+  }
+}
 
 function handleStartChallenge(challengeId: string) {
   challengesStore.startChallenge(challengeId);

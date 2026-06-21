@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { ArrowLeft, User, AlertTriangle, Sparkles, RotateCcw, Volume2, Globe, MessageSquareHeart } from 'lucide-vue-next';
+import { ArrowLeft, User, AlertTriangle, Sparkles, RotateCcw, Volume2, Globe, MessageSquareHeart, Database } from 'lucide-vue-next';
 import {
   useProfileStore,
   ALLERGENS,
@@ -25,6 +25,7 @@ import { useSpeech } from '@/composables/useSpeech';
 import LanguageSelector from '@/components/settings/LanguageSelector.vue';
 import FeedbackForm from '@/components/feedback/FeedbackForm.vue';
 import FeedbackQueue from '@/components/feedback/FeedbackQueue.vue';
+import BackupRestorePanel from '@/components/settings/BackupRestorePanel.vue';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -495,6 +496,15 @@ function handleReset() {
     </section>
 
     <section class="mb-10 animate-fade-slide" style="animation-delay: 0.225s">
+      <div class="flex items-center gap-2 mb-4">
+        <Database class="text-purple-500" :size="22" />
+        <h2 class="text-display text-xl text-brown-900">{{ t('backup.title') }}</h2>
+        <span class="text-xs text-brown-800/60 ml-1">（{{ t('backup.subtitle') }}）</span>
+      </div>
+      <BackupRestorePanel />
+    </section>
+
+    <section class="mb-10 animate-fade-slide" style="animation-delay: 0.25s">
       <div class="card-soft p-5 bg-gradient-to-br from-apricot-50 to-cream-100 border-apricot-200">
         <div class="flex items-start gap-3">
           <div class="text-3xl">💡</div>

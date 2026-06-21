@@ -524,6 +524,7 @@ export const useCookingStore = defineStore(
       getNotesByDish,
       checkIn,
       makeupCheckInYesterday,
+      recalculateStreak,
       toggleDecoration,
       setActiveApron,
       setActiveBackground,

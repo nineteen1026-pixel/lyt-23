@@ -2,8 +2,12 @@
 import { ref, computed, watch, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useTimerStore } from '@/stores/timer';
+import { useLiveRegion, useReducedMotion, useHighContrast } from '@/composables/useAccessibility';
 
 const { t } = useI18n();
+const { announce, liveRegionRef } = useLiveRegion();
+const { motionReduce } = useReducedMotion();
+const { isHighContrast } = useHighContrast();
 
 const props = withDefaults(defineProps<{
   dishEmoji: string;
@@ -115,28 +119,44 @@ function handleMainAction() {
   }
 }
 
+function handleMainKeyDown(event: KeyboardEvent) {
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    handleMainAction();
+  }
+}
+
 function startInsert() {
   stage.value = 'inserting';
+  announce(t('steps.bake.insertButton'), 'polite');
+
+  const insertDelay = motionReduce.value ? 50 : 700;
+  const closeDelay = motionReduce.value ? 50 : 500;
+
   setTimeout(() => {
     dishInside.value = true;
     setTimeout(() => {
       startCloseDoor();
-    }, 500);
-  }, 700);
+    }, closeDelay);
+  }, insertDelay);
 }
 
 function startCloseDoor() {
   stage.value = 'closing';
+  const closeDuration = motionReduce.value ? 50 : 100;
+  const bakeDelay = motionReduce.value ? 50 : 800;
+
   setTimeout(() => {
     doorOpen.value = false;
     setTimeout(() => {
       startBaking();
-    }, 800);
-  }, 100);
+    }, bakeDelay);
+  }, closeDuration);
 }
 
 function startBaking() {
   stage.value = 'baking';
+  announce(t('steps.bake.bakingButton'), 'polite');
 
   if (linkedTimer.value && linkedTimer.value.status === 'idle') {
     timerStore.startTimer(linkedTimer.value.id);
@@ -147,15 +167,16 @@ function startBaking() {
   }
 
   const startTime = Date.now();
+  const bakeDuration = motionReduce.value ? 500 : BAKE_DURATION;
 
   bakeInterval = window.setInterval(() => {
     const elapsed = Date.now() - startTime;
-    const ratio = Math.min(1, elapsed / BAKE_DURATION);
+    const ratio = Math.min(1, elapsed / bakeDuration);
 
     progress.value = Math.round(ratio * 100);
     temperature.value = Math.round(25 + ratio * (TARGET_TEMP - 25));
 
-    if (elapsed >= BAKE_DURATION) {
+    if (elapsed >= bakeDuration) {
       if (bakeInterval) clearInterval(bakeInterval);
       finishBaking();
     }
@@ -167,10 +188,12 @@ function finishBaking() {
   progress.value = 100;
   temperature.value = TARGET_TEMP;
   dingTrigger.value++;
+  announce(t('steps.bake.doneButton'), 'assertive');
 
+  const doorDelay = motionReduce.value ? 50 : 400;
   setTimeout(() => {
     doorOpen.value = true;
-  }, 400);
+  }, doorDelay);
 }
 
 function forceFinishFromTimer() {
@@ -182,6 +205,29 @@ function forceFinishFromTimer() {
   doorOpen.value = false;
   finishBaking();
 }
+
+function handleOvenKeyDown(event: KeyboardEvent) {
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    handleMainAction();
+  }
+}
+
+const ovenAriaLabel = computed(() => {
+  switch (stage.value) {
+    case 'idle':
+      return t('steps.bake.hint');
+    case 'inserting':
+    case 'closing':
+      return t('steps.bake.insertButton');
+    case 'baking':
+      return `${t('steps.bake.bakingButton')}，${displayTime.value}，${effectiveProgress.value}%`;
+    case 'done':
+      return t('steps.bake.completeMessage');
+    default:
+      return t('steps.bake.title');
+  }
+});
 
 watch(
   () => linkedTimer.value?.status,
@@ -203,7 +249,14 @@ onUnmounted(cleanUp);
 </script>
 
 <template>
-  <div class="card-soft p-6 md:p-8 animate-fade-slide">
+  <div
+    class="card-soft p-6 md:p-8"
+    :class="{ 'animate-fade-slide': !motionReduce }"
+    role="region"
+    :aria-label="t('steps.bake.title')"
+  >
+    <div ref="liveRegionRef" class="sr-only" aria-live="polite"></div>
+
     <div class="text-center mb-6">
       <h2 class="text-display text-2xl md:text-3xl text-brown-900 mb-2">
         {{ t('steps.bake.title') }}
@@ -214,7 +267,16 @@ onUnmounted(cleanUp);
     </div>
 
     <div class="flex justify-center mb-6">
-      <div class="relative" style="perspective: 1000px; width: 360px; height: 340px;">
+      <div
+        role="button"
+        tabindex="0"
+        :aria-label="ovenAriaLabel"
+        :aria-disabled="stage === 'baking' || stage === 'inserting' || stage === 'closing'"
+        class="relative cursor-pointer focus:outline-none focus-visible:ring-4 focus-visible:ring-apricot-500 focus-visible:ring-offset-2 rounded-[2rem]"
+        style="perspective: 1000px; width: 360px; height: 340px;"
+        @click="handleMainAction"
+        @keydown="handleOvenKeyDown"
+      >
         <div
           class="absolute rounded-[2rem] overflow-hidden"
           style="
@@ -597,10 +659,15 @@ onUnmounted(cleanUp);
     <div class="max-w-sm mx-auto mb-6 space-y-4">
       <div>
         <div class="flex justify-between text-sm text-brown-800/70 mb-2">
-          <span>{{ t('steps.bake.progressLabel') }}</span>
+          <span id="bake-progress-label">{{ t('steps.bake.progressLabel') }}</span>
           <span class="font-medium text-apricot-600">{{ effectiveProgress }}%</span>
         </div>
         <div
+          role="progressbar"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          :aria-valuenow="effectiveProgress"
+          aria-labelledby="bake-progress-label"
           class="h-4 bg-cream-200 rounded-full overflow-hidden border-2 border-white shadow-inner"
         >
           <div
@@ -611,7 +678,7 @@ onUnmounted(cleanUp);
                 ? 'linear-gradient(90deg, #6EE7B7, #34D399, #6EE7B7)'
                 : 'linear-gradient(90deg, #FFD166, #FF9F43, #FF6B35, #E63946)',
               backgroundSize: '200% 100%',
-              animation: stage === 'baking' ? 'shimmer 1.5s linear infinite' : 'none',
+              animation: stage === 'baking' && !motionReduce ? 'shimmer 1.5s linear infinite' : 'none',
             }"
           >
             <div
@@ -624,10 +691,15 @@ onUnmounted(cleanUp);
 
       <div>
         <div class="flex justify-between text-sm text-brown-800/70 mb-2">
-          <span>{{ t('steps.bake.temperatureLabel') }}</span>
+          <span id="bake-temp-label">{{ t('steps.bake.temperatureLabel') }}</span>
           <span class="font-medium" :style="{ color: temperatureColor }">{{ effectiveTemperature }}°C</span>
         </div>
         <div
+          role="progressbar"
+          aria-valuemin="25"
+          aria-valuemax="180"
+          :aria-valuenow="effectiveTemperature"
+          aria-labelledby="bake-temp-label"
           class="h-4 bg-cream-200 rounded-full overflow-hidden border-2 border-white shadow-inner"
         >
           <div
@@ -648,10 +720,13 @@ onUnmounted(cleanUp);
 
     <div class="flex flex-col items-center gap-3">
       <button
-        class="btn-primary text-lg md:text-xl px-10 py-4 min-w-[200px] relative overflow-hidden"
+        class="btn-primary text-lg md:text-xl px-10 py-4 min-w-[200px] relative overflow-hidden focus:outline-none focus-visible:ring-4 focus-visible:ring-apricot-500 focus-visible:ring-offset-2"
         :class="buttonConfig.class"
         :disabled="buttonConfig.disabled"
+        :aria-label="buttonConfig.text"
         @click="handleMainAction"
+        @keydown.enter.prevent="handleMainAction"
+        @keydown.space.prevent="handleMainAction"
       >
         <span class="flex items-center justify-center gap-2">
           <span>{{ buttonConfig.emoji }}</span>
@@ -681,8 +756,11 @@ onUnmounted(cleanUp);
 
       <button
         v-if="stage === 'idle' && !hasLinkedTimer"
-        class="btn-secondary text-sm px-5 py-2.5 flex items-center gap-2"
+        class="btn-secondary text-sm px-5 py-2.5 flex items-center gap-2 focus:outline-none focus-visible:ring-4 focus-visible:ring-apricot-500 focus-visible:ring-offset-2"
+        :aria-label="t('steps.bake.linkTimer')"
         @click="emit('linkTimer')"
+        @keydown.enter.prevent="emit('linkTimer')"
+        @keydown.space.prevent="emit('linkTimer')"
       >
         <span>⏱️</span>
         <span>{{ t('steps.bake.linkTimer') }}</span>

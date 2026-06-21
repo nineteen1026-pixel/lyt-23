@@ -15,6 +15,9 @@
     --counter-bg: linear-gradient(180deg, #DEB887 0%, #D2B48C 50%, #C4A574 100%);
     --counter-border: #B8956E;
     --counter-accent: #8B7355;
+    --focus-ring: 3px solid #0066CC;
+    --focus-ring-offset: 2px;
+    --font-size-base: 16px;
   }
 
   * {
@@ -25,6 +28,7 @@
     margin: 0;
     padding: 0;
     min-height: 100vh;
+    font-size: var(--font-size-base);
   }
 
   body {
@@ -45,6 +49,48 @@
 
   button {
     font-family: inherit;
+  }
+
+  a:focus-visible,
+  button:focus-visible,
+  [role="button"]:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  [tabindex]:focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-ring-offset);
+  }
+
+  .skip-link {
+    position: fixed;
+    top: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    padding: 12px 24px;
+    background: #0066CC;
+    color: white;
+    font-weight: 600;
+    border-radius: 0 0 8px 8px;
+    transition: top 0.3s ease;
+  }
+
+  .skip-link:focus {
+    top: 0;
+    outline: none;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
   }
 }
 
@@ -73,6 +119,11 @@
     font-family: "ZCOOL KuaiLe", "Noto Sans SC", sans-serif;
     letter-spacing: 0.02em;
   }
+
+  .focus-ring {
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-ring-offset);
+  }
 }
 
 @layer utilities {
@@ -94,6 +145,137 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+
+  .motion-safe {
+    @media (prefers-reduced-motion: reduce) {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+}
+
+html.hc-light {
+  --color-bg: #FFFFFF;
+  --color-bg-soft: #FFFFFF;
+  --color-primary: #000000;
+  --color-secondary: #000000;
+  --color-text: #000000;
+  --gradient-top-left: #FFFFFF;
+  --gradient-bottom-right: #FFFFFF;
+  --gradient-base: #FFFFFF;
+  --focus-ring: 3px solid #000000;
+  --focus-ring-offset: 2px;
+}
+
+html.hc-light body {
+  background: #FFFFFF;
+  color: #000000;
+}
+
+html.hc-light .btn-primary {
+  background: #000000 !important;
+  color: #FFFFFF !important;
+  border: 2px solid #000000 !important;
+}
+
+html.hc-light .btn-secondary {
+  background: #FFFFFF !important;
+  color: #000000 !important;
+  border: 2px solid #000000 !important;
+}
+
+html.hc-light .card-soft {
+  background: #FFFFFF !important;
+  border: 2px solid #000000 !important;
+  box-shadow: none !important;
+}
+
+html.hc-dark {
+  --color-bg: #000000;
+  --color-bg-soft: #000000;
+  --color-primary: #FFFF00;
+  --color-secondary: #FFFF00;
+  --color-text: #FFFFFF;
+  --gradient-top-left: #000000;
+  --gradient-bottom-right: #000000;
+  --gradient-base: #000000;
+  --focus-ring: 3px solid #FFFF00;
+  --focus-ring-offset: 2px;
+}
+
+html.hc-dark body {
+  background: #000000;
+  color: #FFFFFF;
+}
+
+html.hc-dark .btn-primary {
+  background: #FFFF00 !important;
+  color: #000000 !important;
+  border: 2px solid #FFFF00 !important;
+}
+
+html.hc-dark .btn-secondary {
+  background: #000000 !important;
+  color: #FFFFFF !important;
+  border: 2px solid #FFFF00 !important;
+}
+
+html.hc-dark .card-soft {
+  background: #000000 !important;
+  border: 2px solid #FFFF00 !important;
+  box-shadow: none !important;
+}
+
+html.hc-dark .text-brown-800,
+html.hc-dark .text-brown-900 {
+  color: #FFFFFF !important;
+}
+
+html.hc-light .text-brown-800,
+html.hc-light .text-brown-900 {
+  color: #000000 !important;
+}
+
+html.reduced-motion *,
+html.reduced-motion *::before,
+html.reduced-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+html.large-text {
+  --font-size-base: 20px;
+}
+
+html.large-text h1,
+html.large-text .text-2xl {
+  font-size: 1.75rem !important;
+}
+
+html.large-text h2,
+html.large-text .text-xl {
+  font-size: 1.5rem !important;
+}
+
+html.large-text .text-lg {
+  font-size: 1.25rem !important;
+}
+
+html.large-text .text-sm {
+  font-size: 1rem !important;
+}
+
+html.large-text .btn-primary,
+html.large-text .btn-secondary {
+  padding: 0.75rem 1.25rem !important;
+  font-size: 1.1rem !important;
+}
+
+html.focus-visible-enabled *:focus {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .page-enter-active,

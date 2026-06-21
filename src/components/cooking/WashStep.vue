@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import { ref, onUnmounted, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useKeyboardNavigation, useLiveRegion, useReducedMotion, useHighContrast } from '@/composables/useAccessibility';
 
 const { t } = useI18n();
+const { announce, liveRegionRef } = useLiveRegion();
+const { motionReduce } = useReducedMotion();
+const { isHighContrast } = useHighContrast();
 
 const props = defineProps<{
   dishEmoji: string;
@@ -19,6 +23,7 @@ const isWashing = ref(false);
 const isComplete = ref(false);
 const progress = ref(0);
 const dirtOpacity = ref(1);
+const sinkFocused = ref(false);
 
 const sinkRef = ref<HTMLDivElement | null>(null);
 const droplets: HTMLDivElement[] = [];
@@ -29,9 +34,20 @@ let dropletInterval: number | null = null;
 const MAX_DROPLETS = 30;
 const WASH_DURATION = 3000;
 
+const { handleKeyDown: sinkKeyDown } = useKeyboardNavigation(
+  () => startWash(),
+);
+
+const sinkAriaLabel = computed(() => {
+  if (isComplete.value) return t('steps.wash.completeMessage');
+  if (isWashing.value) return `${t('steps.wash.washingButton')}，进度 ${progress.value}%`;
+  return t('steps.wash.clickHint');
+});
+
 const startWash = () => {
   if (isWashing.value || isComplete.value) return;
   isWashing.value = true;
+  announce(t('steps.wash.washingButton'), 'assertive');
 
   const startTime = Date.now();
 
@@ -47,8 +63,10 @@ const startWash = () => {
     }
   }, 30);
 
-  createDroplets();
-  dropletInterval = window.setInterval(createDroplets, 120);
+  if (!motionReduce.value) {
+    createDroplets();
+    dropletInterval = window.setInterval(createDroplets, 120);
+  }
 };
 
 const createDroplets = () => {
@@ -115,6 +133,7 @@ const finishWash = () => {
   isComplete.value = true;
   progress.value = 100;
   dirtOpacity.value = 0;
+  announce(t('steps.wash.completeMessage'), 'assertive');
 
   setTimeout(() => {
     emit('complete');
@@ -133,7 +152,14 @@ onUnmounted(cleanUp);
 </script>
 
 <template>
-  <div class="card-soft p-6 md:p-8 animate-pop-in">
+  <div
+    class="card-soft p-6 md:p-8"
+    :class="{ 'animate-pop-in': !motionReduce }"
+    role="region"
+    :aria-label="t('steps.wash.title')"
+  >
+    <div ref="liveRegionRef" class="sr-only" aria-live="polite"></div>
+
     <div class="text-center mb-6">
       <h2 class="text-display text-2xl md:text-3xl text-brown-900 mb-2">
         {{ t('steps.wash.title') }}
@@ -146,11 +172,19 @@ onUnmounted(cleanUp);
     <div class="flex justify-center mb-6">
       <div
         ref="sinkRef"
-        class="relative w-full max-w-sm h-72 md:h-80 rounded-[2.5rem] overflow-hidden cursor-pointer select-none shadow-inner border-4 border-blue-200/60"
+        role="button"
+        tabindex="0"
+        :aria-label="sinkAriaLabel"
+        :aria-disabled="isWashing || isComplete"
+        class="relative w-full max-w-sm h-72 md:h-80 rounded-[2.5rem] overflow-hidden cursor-pointer select-none shadow-inner border-4 border-blue-200/60 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+        :class="{
+          'opacity-60 cursor-not-allowed': isWashing || isComplete,
+        }"
         :style="{
           background: 'linear-gradient(180deg, #E0F4FF 0%, #B3E0FF 40%, #7CC8F2 70%, #4FB3E8 100%)',
         }"
         @click="startWash"
+        @keydown="sinkKeyDown"
       >
         <div
           class="absolute inset-x-0 bottom-0 h-1/2"
@@ -235,10 +269,15 @@ onUnmounted(cleanUp);
 
     <div class="max-w-sm mx-auto mb-6">
       <div class="flex justify-between text-sm text-brown-800/70 mb-2">
-        <span>{{ t('steps.wash.progressLabel') }}</span>
+        <span id="wash-progress-label">{{ t('steps.wash.progressLabel') }}</span>
         <span class="font-medium text-blue-600">{{ progress }}%</span>
       </div>
       <div
+        role="progressbar"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        :aria-valuenow="progress"
+        :aria-labelledby="'wash-progress-label'"
         class="h-4 bg-cream-200 rounded-full overflow-hidden border-2 border-white shadow-inner"
       >
         <div
@@ -247,7 +286,7 @@ onUnmounted(cleanUp);
             width: `${progress}%`,
             background: 'linear-gradient(90deg, #4FB3E8, #7CC8F2, #4FB3E8)',
             backgroundSize: '200% 100%',
-            animation: isWashing ? 'shimmer 1s linear infinite' : 'none',
+            animation: isWashing && !motionReduce ? 'shimmer 1s linear infinite' : 'none',
           }"
         >
           <div
@@ -260,9 +299,12 @@ onUnmounted(cleanUp);
 
     <div class="flex justify-center">
       <button
-        class="btn-primary text-lg md:text-xl px-10 py-4 min-w-[180px] relative overflow-hidden"
+        class="btn-primary text-lg md:text-xl px-10 py-4 min-w-[180px] relative overflow-hidden focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
         :disabled="isWashing || isComplete"
+        :aria-label="isComplete ? t('steps.wash.completeButton') : isWashing ? t('steps.wash.washingButton') : t('steps.wash.startButton')"
         @click="startWash"
+        @keydown.enter.prevent="startWash"
+        @keydown.space.prevent="startWash"
       >
         <span v-if="!isWashing && !isComplete">
           {{ t('steps.wash.startButton') }}

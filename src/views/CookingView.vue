@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch, onMounted } from 'vue';
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { ArrowLeft, ChevronLeft, ChevronRight, Home, Leaf, AlertCircle, Volume2, VolumeX, Timer } from 'lucide-vue-next';
 import { getDishById } from '@/data/dishes';
@@ -16,6 +16,7 @@ import {
   getCurrentMonth,
 } from '@/data/seasonal';
 import { useSpeech } from '@/composables/useSpeech';
+import { useLiveRegion } from '@/composables/useAccessibility';
 import StepProgress from '@/components/cooking/StepProgress.vue';
 import WashStep from '@/components/cooking/WashStep.vue';
 import CutStep from '@/components/cooking/CutStep.vue';
@@ -47,6 +48,7 @@ const onboardingStore = useOnboardingStore();
 const timerStore = useTimerStore();
 const { speak, stop, speakStep, isSpeaking, canSpeak } = useSpeech();
 const { getLocalizedDishById } = useDishI18n();
+const { announce } = useLiveRegion();
 
 const dishId = computed(() => route.params.dishId as string);
 const dish = computed(() => getDishById(dishId.value));
@@ -163,6 +165,11 @@ onMounted(() => {
       onboardingStore.startFlow('cooking');
     }, 500);
   }
+  window.addEventListener('keydown', handleGlobalKeyDown);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleGlobalKeyDown);
 });
 
 function onStepComplete(stepIndex: number, decorations?: string[]) {
@@ -206,10 +213,19 @@ function finishCooking() {
 function goPrev() {
   if (currentStep.value > 0) {
     currentStep.value -= 1;
+    announce(`切换到步骤 ${currentStep.value + 1}：${stepNames.value[currentStep.value]}`);
   } else {
     router.back();
   }
 }
+
+const stepNames = computed(() => [
+  '清洗',
+  '切菜',
+  '调味',
+  '烘烤',
+  '摆盘',
+]);
 
 function formatCookingDuration(seconds: number): string {
   if (seconds < 60) return `${seconds} 秒`;
@@ -221,6 +237,55 @@ function formatCookingDuration(seconds: number): string {
 function goNext() {
   if (stepCompleted.value[currentStep.value] && currentStep.value < 4) {
     currentStep.value += 1;
+    announce(`切换到步骤 ${currentStep.value + 1}：${stepNames.value[currentStep.value]}`);
+  }
+}
+
+function handleGlobalKeyDown(event: KeyboardEvent) {
+  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+  const modKey = isMac ? event.metaKey : event.ctrlKey;
+  if (modKey) return;
+
+  const target = event.target as HTMLElement;
+  if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+    return;
+  }
+
+  switch (event.key) {
+    case 'ArrowLeft':
+      event.preventDefault();
+      goPrev();
+      break;
+    case 'ArrowRight':
+      event.preventDefault();
+      goNext();
+      break;
+    case 'Home':
+      event.preventDefault();
+      if (currentStep.value !== 0) {
+        currentStep.value = 0;
+        announce(`切换到步骤 1：${stepNames.value[0]}`);
+      }
+      break;
+    case 'End':
+      event.preventDefault();
+      if (currentStep.value !== 4) {
+        currentStep.value = 4;
+        announce(`切换到步骤 5：${stepNames.value[4]}`);
+      }
+      break;
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+      event.preventDefault();
+      const stepIndex = parseInt(event.key) - 1;
+      if (stepIndex !== currentStep.value) {
+        currentStep.value = stepIndex;
+        announce(`切换到步骤 ${event.key}：${stepNames.value[stepIndex]}`);
+      }
+      break;
   }
 }
 
@@ -364,6 +429,8 @@ function handleSaveNote(data: { content: string; rating: 1 | 2 | 3 | 4 | 5 }) {
 
 <template>
   <div v-if="dish" class="container max-w-7xl mx-auto px-4 pt-6">
+    <a href="#main-content" class="skip-link">跳转到主要内容</a>
+
     <template v-if="!isDishAvailable">
       <div class="flex flex-col items-center justify-center py-16 animate-fade-slide text-center">
         <div class="relative mb-6">
@@ -542,13 +609,21 @@ function handleSaveNote(data: { content: string; rating: 1 | 2 | 3 | 4 | 5 }) {
         </div>
       </header>
 
-      <div class="flex flex-col-reverse lg:flex-row lg:items-start gap-6">
+      <div id="main-content" class="flex flex-col-reverse lg:flex-row lg:items-start gap-6">
         <div class="flex-1 max-w-3xl mx-auto w-full lg:mx-0">
-          <div class="mb-8 animate-fade-slide" style="animation-delay: 0.05s" data-onboarding="step-progress">
+          <div
+            class="mb-8"
+            :class="{ 'animate-fade-slide': !settingsStore.reducedMotion }"
+            :style="{ animationDelay: '0.05s' }"
+            data-onboarding="step-progress"
+          >
             <StepProgress :current-step="currentStep" />
           </div>
 
-          <div class="animate-fade-slide" style="animation-delay: 0.1s">
+          <div
+            :class="{ 'animate-fade-slide': !settingsStore.reducedMotion }"
+            :style="{ animationDelay: '0.1s' }"
+          >
             <Transition name="step" mode="out-in">
               <WashStep
                 v-if="currentStep === 0"

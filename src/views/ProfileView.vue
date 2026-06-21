@@ -17,7 +17,9 @@ import {
 import {
   useSettingsStore,
   SPEECH_RATE_OPTIONS,
+  HIGH_CONTRAST_OPTIONS,
   type SpeechRate,
+  type HighContrastMode,
 } from '@/stores/settings';
 import { useSpeech } from '@/composables/useSpeech';
 import LanguageSelector from '@/components/settings/LanguageSelector.vue';
@@ -343,6 +345,141 @@ function handleReset() {
         <span class="text-xs text-brown-800/60 ml-1">（切换界面显示语言）</span>
       </div>
       <LanguageSelector />
+    </section>
+
+    <section class="mb-10 animate-fade-slide" style="animation-delay: 0.185s">
+      <div class="flex items-center gap-2 mb-4">
+        <span class="text-2xl">♿</span>
+        <h2 class="text-display text-xl text-brown-900">无障碍设置</h2>
+        <span class="text-xs text-brown-800/60 ml-1">（让小厨房更易用）</span>
+      </div>
+
+      <div class="card-soft p-5 space-y-6">
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-sm font-medium text-brown-900">🎨 高对比度主题</span>
+            <span class="text-xs text-brown-800/60">
+              {{ HIGH_CONTRAST_OPTIONS.find((o) => o.value === settingsStore.highContrastMode)?.label }}
+            </span>
+          </div>
+          <div class="grid grid-cols-3 gap-2">
+            <button
+              v-for="option in HIGH_CONTRAST_OPTIONS"
+              :key="option.value"
+              class="py-2.5 px-2 rounded-xl text-sm transition-all duration-300 border-2 active:scale-95 focus:outline-none focus-visible:ring-4 focus-visible:ring-apricot-500 focus-visible:ring-offset-2"
+              :class="{
+                'bg-apricot-100 border-apricot-400 text-apricot-700 shadow-sm':
+                  settingsStore.highContrastMode === option.value,
+                'bg-white border-cream-300 text-brown-800/70 hover:border-cream-400':
+                  settingsStore.highContrastMode !== option.value,
+              }"
+              :aria-pressed="settingsStore.highContrastMode === option.value"
+              @click="settingsStore.setHighContrastMode(option.value as HighContrastMode)"
+            >
+              <div class="text-lg mb-0.5">
+                {{ option.value === 'off' ? '☀️' : option.value === 'light' ? '⚪' : '⚫' }}
+              </div>
+              <div class="text-xs">{{ option.label }}</div>
+            </button>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between pt-4 border-t border-cream-200">
+          <div class="flex items-center gap-3">
+            <div
+              class="w-12 h-12 rounded-2xl flex items-center justify-center"
+              :class="settingsStore.reducedMotion ? 'bg-purple-100' : 'bg-cream-200'"
+            >
+              <span class="text-xl">{{ settingsStore.reducedMotion ? '🐢' : '🐇' }}</span>
+            </div>
+            <div>
+              <div class="text-sm font-medium text-brown-900">减少动画</div>
+              <div class="text-xs text-brown-800/60 mt-0.5">
+                关闭不必要的动画效果
+              </div>
+            </div>
+          </div>
+          <button
+            role="switch"
+            :aria-checked="settingsStore.reducedMotion"
+            :aria-label="'减少动画'"
+            class="relative w-14 h-7 rounded-full transition-all duration-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-apricot-500 focus-visible:ring-offset-2"
+            :class="settingsStore.reducedMotion ? 'bg-purple-500' : 'bg-cream-300'"
+            @click="settingsStore.toggleReducedMotion()"
+            @keydown.enter.prevent="settingsStore.toggleReducedMotion()"
+            @keydown.space.prevent="settingsStore.toggleReducedMotion()"
+          >
+            <div
+              class="absolute top-0.5 w-6 h-6 rounded-full bg-white shadow-md transition-all duration-300"
+              :class="settingsStore.reducedMotion ? 'left-7' : 'left-0.5'"
+            />
+          </button>
+        </div>
+
+        <div class="flex items-center justify-between pt-4 border-t border-cream-200">
+          <div class="flex items-center gap-3">
+            <div
+              class="w-12 h-12 rounded-2xl flex items-center justify-center"
+              :class="settingsStore.largeText ? 'bg-teal-100' : 'bg-cream-200'"
+            >
+              <span class="text-xl">{{ settingsStore.largeText ? '🔍' : '🔤' }}</span>
+            </div>
+            <div>
+              <div class="text-sm font-medium text-brown-900">大字体</div>
+              <div class="text-xs text-brown-800/60 mt-0.5">
+                增大界面字体大小
+              </div>
+            </div>
+          </div>
+          <button
+            role="switch"
+            :aria-checked="settingsStore.largeText"
+            :aria-label="'大字体'"
+            class="relative w-14 h-7 rounded-full transition-all duration-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-apricot-500 focus-visible:ring-offset-2"
+            :class="settingsStore.largeText ? 'bg-teal-500' : 'bg-cream-300'"
+            @click="settingsStore.toggleLargeText()"
+            @keydown.enter.prevent="settingsStore.toggleLargeText()"
+            @keydown.space.prevent="settingsStore.toggleLargeText()"
+          >
+            <div
+              class="absolute top-0.5 w-6 h-6 rounded-full bg-white shadow-md transition-all duration-300"
+              :class="settingsStore.largeText ? 'left-7' : 'left-0.5'"
+            />
+          </button>
+        </div>
+
+        <div class="flex items-center justify-between pt-4 border-t border-cream-200">
+          <div class="flex items-center gap-3">
+            <div
+              class="w-12 h-12 rounded-2xl flex items-center justify-center"
+              :class="settingsStore.focusVisible ? 'bg-indigo-100' : 'bg-cream-200'"
+            >
+              <span class="text-xl">{{ settingsStore.focusVisible ? '🎯' : '👆' }}</span>
+            </div>
+            <div>
+              <div class="text-sm font-medium text-brown-900">可见焦点</div>
+              <div class="text-xs text-brown-800/60 mt-0.5">
+                键盘导航时显示焦点指示
+              </div>
+            </div>
+          </div>
+          <button
+            role="switch"
+            :aria-checked="settingsStore.focusVisible"
+            :aria-label="'可见焦点'"
+            class="relative w-14 h-7 rounded-full transition-all duration-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-apricot-500 focus-visible:ring-offset-2"
+            :class="settingsStore.focusVisible ? 'bg-indigo-500' : 'bg-cream-300'"
+            @click="settingsStore.toggleFocusVisible()"
+            @keydown.enter.prevent="settingsStore.toggleFocusVisible()"
+            @keydown.space.prevent="settingsStore.toggleFocusVisible()"
+          >
+            <div
+              class="absolute top-0.5 w-6 h-6 rounded-full bg-white shadow-md transition-all duration-300"
+              :class="settingsStore.focusVisible ? 'left-7' : 'left-0.5'"
+            />
+          </button>
+        </div>
+      </div>
     </section>
 
     <section class="mb-10 animate-fade-slide" style="animation-delay: 0.2s">

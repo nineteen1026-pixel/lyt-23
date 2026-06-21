@@ -3,10 +3,16 @@ import { ref, computed, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useProfileStore } from '@/stores/profile';
 import { useDishI18n } from '@/composables/useDishI18n';
+import { useLiveRegion, useReducedMotion, useHighContrast } from '@/composables/useAccessibility';
 
 const { t } = useI18n();
 const { getLocalizedDishById } = useDishI18n();
 const profileStore = useProfileStore();
+const { announce, liveRegionRef } = useLiveRegion();
+const { motionReduce } = useReducedMotion();
+const { isHighContrast } = useHighContrast();
+
+const focusedSeasoningIndex = ref(0);
 
 interface SeasoningConfig {
   color: string;
@@ -258,11 +264,14 @@ function sprinklingSeasoning(index: number) {
   if (state === 'sprinkling' || state === 'done' || state === 'skipped') return;
 
   seasoningStates.value.set(seasoning, 'sprinkling');
+  announce(`${seasoning} ${t('steps.season.sprinkling')}`, 'polite');
 
   const config = getSeasoningConfig(seasoning);
-  createParticles(index, config, multiplier);
+  if (!motionReduce.value) {
+    createParticles(index, config, multiplier);
+  }
 
-  const fadeDuration = 1500;
+  const fadeDuration = motionReduce.value ? 100 : 1500;
   const opacityStart = seasoningOpacities.value.get(seasoning) || 0;
   const targetOpacity = Math.min(1, multiplier);
   const startTime = Date.now();
@@ -283,7 +292,48 @@ function sprinklingSeasoning(index: number) {
   setTimeout(() => {
     seasoningStates.value.set(seasoning, 'done');
     sprinkledCount.value++;
-  }, 1200);
+    announce(`${seasoning} ${t('steps.season.done')}`, 'polite');
+  }, motionReduce.value ? 100 : 1200);
+}
+
+function handleSeasoningKeyDown(event: KeyboardEvent, index: number) {
+  switch (event.key) {
+    case 'Enter':
+    case ' ':
+      event.preventDefault();
+      sprinklingSeasoning(index);
+      break;
+    case 'ArrowRight':
+    case 'ArrowDown':
+      event.preventDefault();
+      navigateSeasoning(1);
+      break;
+    case 'ArrowLeft':
+    case 'ArrowUp':
+      event.preventDefault();
+      navigateSeasoning(-1);
+      break;
+    case 'Home':
+      event.preventDefault();
+      focusedSeasoningIndex.value = 0;
+      break;
+    case 'End':
+      event.preventDefault();
+      focusedSeasoningIndex.value = props.seasonings.length - 1;
+      break;
+  }
+}
+
+function navigateSeasoning(direction: number) {
+  const total = props.seasonings.length;
+  let newIndex = focusedSeasoningIndex.value + direction;
+  if (newIndex < 0) newIndex = total - 1;
+  if (newIndex >= total) newIndex = 0;
+  focusedSeasoningIndex.value = newIndex;
+
+  const bottles = document.querySelectorAll('[data-seasoning-bottle]');
+  const targetBottle = bottles[newIndex] as HTMLElement;
+  targetBottle?.focus();
 }
 
 function createParticles(bottleIndex: number, config: SeasoningConfig, multiplier: number = 1) {
@@ -365,15 +415,26 @@ function handleMix() {
   if (!allSprinkled.value || isMixing.value) return;
 
   isMixing.value = true;
+  announce(t('steps.season.mixingButton'), 'polite');
+
+  const mixDuration = motionReduce.value ? 100 : 800;
 
   setTimeout(() => {
     isMixing.value = false;
     showComplete.value = true;
-  }, 800);
+    announce(t('steps.season.completeMessage'), 'assertive');
+  }, mixDuration);
 
   setTimeout(() => {
     emit('complete');
-  }, 2200);
+  }, motionReduce.value ? 300 : 2200);
+}
+
+function handleMixKeyDown(event: KeyboardEvent) {
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    handleMix();
+  }
 }
 
 const overlayLayers = computed(() => {
@@ -394,13 +455,20 @@ onUnmounted(cleanUp);
 </script>
 
 <template>
-  <div class="card-soft p-6 animate-fade-slide">
+  <div
+    class="card-soft p-6"
+    :class="{ 'animate-fade-slide': !motionReduce }"
+    role="region"
+    :aria-label="t('steps.season.title')"
+  >
+    <div ref="liveRegionRef" class="sr-only" aria-live="polite"></div>
+
     <div class="text-center mb-4">
       <h2 class="text-display text-2xl text-brown-900 mb-1">{{ t('steps.season.title') }}</h2>
       <p class="text-sm text-brown-800/70">{{ t('steps.season.subtitle') }}</p>
     </div>
 
-    <div class="relative mx-auto mb-6" style="width: 360px; height: 340px;">
+    <div class="relative mx-auto mb-6" role="group" :aria-label="t('steps.season.subtitle')" style="width: 360px; height: 340px;">
       <div
         class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-0"
         style="
@@ -496,16 +564,23 @@ onUnmounted(cleanUp);
           <div
             v-for="(seasoning, index) in seasonings"
             :key="'bottle-' + seasoning"
-            class="flex flex-col items-center select-none"
+            data-seasoning-bottle
+            role="button"
+            :tabindex="seasoningStates.get(seasoning) === 'skipped' ? -1 : 0"
+            :aria-label="`${seasoning}，${seasoningStates.get(seasoning) === 'done' ? '已添加' : seasoningStates.get(seasoning) === 'sprinkling' ? '添加中' : seasoningStates.get(seasoning) === 'skipped' ? '已跳过' : '点击添加'}`"
+            :aria-disabled="seasoningStates.get(seasoning) !== 'idle'"
+            class="flex flex-col items-center select-none focus:outline-none focus-visible:ring-4 focus-visible:ring-apricot-500 focus-visible:ring-offset-2 rounded-xl p-1"
             :class="{
               'cursor-pointer': seasoningStates.get(seasoning) === 'idle',
               'pointer-events-none': seasoningStates.get(seasoning) !== 'idle',
               'opacity-50 grayscale': seasoningStates.get(seasoning) === 'skipped',
             }"
             @click="sprinklingSeasoning(index)"
+            @keydown="(e) => handleSeasoningKeyDown(e, index)"
           >
             <div
-              class="relative transition-transform duration-400 ease-out"
+              class="relative"
+              :class="{ 'transition-transform duration-400 ease-out': !motionReduce }"
               :style="{
                 transform: getBottleTransform(index, seasoningStates.get(seasoning) || 'idle'),
                 transformOrigin: 'bottom center',
@@ -634,23 +709,32 @@ onUnmounted(cleanUp);
 
     <div class="mb-5">
       <div class="flex items-center justify-between mb-2">
-        <span class="text-sm text-brown-800/70">{{ t('steps.season.progressLabel') }}</span>
+        <span id="season-progress-label" class="text-sm text-brown-800/70">{{ t('steps.season.progressLabel') }}</span>
         <span class="text-sm font-medium text-brown-900">{{ progressText }}</span>
       </div>
-      <div class="w-full h-3 bg-cream-200 rounded-full overflow-hidden border border-white/60">
+      <div
+        role="progressbar"
+        aria-valuemin="0"
+        :aria-valuemax="TOTAL"
+        :aria-valuenow="sprinkledCount + initialSkipped"
+        aria-labelledby="season-progress-label"
+        class="w-full h-3 bg-cream-200 rounded-full overflow-hidden border border-white/60"
+      >
         <div
           class="h-full bg-gradient-to-r from-apricot-400 via-apricot-500 to-apricot-600 rounded-full transition-all duration-400 ease-out"
           :style="{ width: `${TOTAL > 0 ? ((sprinkledCount + initialSkipped) / TOTAL) * 100 : 0}%` }"
         />
       </div>
-      <div class="flex justify-between mt-2 gap-1.5">
+      <div class="flex justify-between mt-2 gap-1.5" role="list" :aria-label="t('steps.season.progressLabel')">
         <div
           v-for="(s, i) in seasonings"
           :key="'dot-' + s"
+          role="listitem"
+          :aria-label="`${s}：${seasoningStates.get(s) === 'done' ? '已完成' : seasoningStates.get(s) === 'sprinkling' ? '进行中' : seasoningStates.get(s) === 'skipped' ? '已跳过' : '待完成'}`"
           class="flex-1 h-1.5 rounded-full transition-all duration-300"
           :class="{
             'bg-matcha-500': seasoningStates.get(s) === 'done',
-            'bg-apricot-400 animate-breath-ring-sm': seasoningStates.get(s) === 'sprinkling',
+            'bg-apricot-400 animate-breath-ring-sm': seasoningStates.get(s) === 'sprinkling' && !motionReduce,
             'bg-cream-300/60': seasoningStates.get(s) === 'idle',
             'bg-gray-300/80': seasoningStates.get(s) === 'skipped',
           }"
@@ -709,14 +793,17 @@ onUnmounted(cleanUp);
     </div>
 
     <button
-      class="btn-primary w-full text-display text-lg transition-all duration-300"
+      class="btn-primary w-full text-display text-lg transition-all duration-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-apricot-500 focus-visible:ring-offset-2"
       :class="{
         'opacity-60 cursor-not-allowed': !allSprinkled,
         'bg-gradient-to-r from-matcha-500 to-matcha-600 hover:from-matcha-600 hover:to-matcha-600 !cursor-pointer':
           allSprinkled && !isMixing,
       }"
       :disabled="isButtonDisabled"
+      :aria-label="buttonText"
       @click="handleMix"
+      @keydown.enter.prevent="handleMix"
+      @keydown.space.prevent="handleMix"
     >
       <span class="flex items-center justify-center gap-2">
         <span v-if="isMixing">🥄</span>

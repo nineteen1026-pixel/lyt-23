@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useLiveRegion, useReducedMotion, useHighContrast } from '@/composables/useAccessibility';
 
 const { t } = useI18n();
+const { announce, liveRegionRef } = useLiveRegion();
+const { motionReduce } = useReducedMotion();
+const { isHighContrast } = useHighContrast();
 
 const props = defineProps<{
   dishEmoji: string;
@@ -25,6 +29,12 @@ const buttonText = computed(() => {
 });
 
 const progressText = computed(() => `${Math.min(cuts.value, TOTAL_CUTS)}/${TOTAL_CUTS}`);
+
+const cuttingBoardAriaLabel = computed(() => {
+  if (cutCompleted.value) return t('steps.cut.completeMessage');
+  if (isCutting.value) return t('steps.cut.cutButton', { cutNumber: cuts.value + 1 });
+  return `${t('steps.cut.subtitle')}，${progressText.value}`;
+});
 
 const boardShakeKey = ref(0);
 const knifeSwingKey = ref(0);
@@ -77,6 +87,8 @@ function handleCut() {
   knifeSwingKey.value++;
   showKnifeFlash.value = true;
 
+  announce(t('steps.cut.cutButton', { cutNumber: cuts.value + 1 }), 'polite');
+
   setTimeout(() => {
     showKnifeFlash.value = false;
   }, 220);
@@ -86,23 +98,47 @@ function handleCut() {
     isCutting.value = false;
     if (cuts.value >= TOTAL_CUTS) {
       cutCompleted.value = true;
+      announce(t('steps.cut.completeMessage'), 'assertive');
     }
   }, 300);
+}
+
+function handleKeyDown(event: KeyboardEvent) {
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    handleCut();
+  }
 }
 </script>
 
 <template>
-  <div class="card-soft p-6 animate-fade-slide">
+  <div
+    class="card-soft p-6"
+    :class="{ 'animate-fade-slide': !motionReduce }"
+    role="region"
+    :aria-label="t('steps.cut.title')"
+  >
+    <div ref="liveRegionRef" class="sr-only" aria-live="polite"></div>
+
     <div class="text-center mb-4">
       <h2 class="text-display text-2xl text-brown-900 mb-1">{{ t('steps.cut.title') }}</h2>
       <p class="text-sm text-brown-800/70">{{ t('steps.cut.subtitle') }}</p>
     </div>
 
-    <div class="relative mx-auto mb-6" style="width: 340px; height: 260px;">
+    <div
+      class="relative mx-auto mb-6 cursor-pointer focus:outline-none focus-visible:ring-4 focus-visible:ring-apricot-500 focus-visible:ring-offset-2 rounded-3xl"
+      style="width: 340px; height: 260px;"
+      role="button"
+      tabindex="0"
+      :aria-label="cuttingBoardAriaLabel"
+      :aria-disabled="isCutting && !cutCompleted"
+      @click="handleCut"
+      @keydown="handleKeyDown"
+    >
       <div
         :key="'board-' + boardShakeKey"
         class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-        :class="boardShakeKey > 0 ? 'animate-shake' : ''"
+        :class="boardShakeKey > 0 && !motionReduce ? 'animate-shake' : ''"
       >
         <div
           class="relative rounded-3xl shadow-card"
@@ -228,19 +264,28 @@ function handleCut() {
 
     <div class="mb-5">
       <div class="flex items-center justify-between mb-2">
-        <span class="text-sm text-brown-800/70">{{ t('steps.cut.progressLabel') }}</span>
+        <span id="cut-progress-label" class="text-sm text-brown-800/70">{{ t('steps.cut.progressLabel') }}</span>
         <span class="text-sm font-medium text-brown-900">{{ progressText }}</span>
       </div>
-      <div class="w-full h-3 bg-cream-200 rounded-full overflow-hidden border border-white/60">
+      <div
+        role="progressbar"
+        aria-valuemin="0"
+        :aria-valuemax="TOTAL_CUTS"
+        :aria-valuenow="Math.min(cuts, TOTAL_CUTS)"
+        aria-labelledby="cut-progress-label"
+        class="w-full h-3 bg-cream-200 rounded-full overflow-hidden border border-white/60"
+      >
         <div
           class="h-full bg-gradient-to-r from-apricot-400 via-apricot-500 to-apricot-600 rounded-full transition-all duration-400 ease-out"
           :style="{ width: `${(Math.min(cuts, TOTAL_CUTS) / TOTAL_CUTS) * 100}%` }"
         />
       </div>
-      <div class="flex justify-between mt-2 gap-1.5">
+      <div class="flex justify-between mt-2 gap-1.5" role="list" :aria-label="t('steps.cut.progressLabel')">
         <div
           v-for="i in TOTAL_CUTS"
           :key="i"
+          role="listitem"
+          :aria-label="`第 ${i} 刀${i <= cuts ? '已完成' : '未完成'}`"
           class="flex-1 h-1.5 rounded-full transition-all duration-300"
           :class="i <= cuts ? 'bg-apricot-500' : 'bg-cream-300/60'"
         />
@@ -248,10 +293,13 @@ function handleCut() {
     </div>
 
     <button
-      class="btn-primary w-full text-display text-lg"
+      class="btn-primary w-full text-display text-lg focus:outline-none focus-visible:ring-4 focus-visible:ring-apricot-500 focus-visible:ring-offset-2"
       :class="cutCompleted ? 'bg-gradient-to-r from-matcha-500 to-matcha-600 hover:from-matcha-600 hover:to-matcha-600' : ''"
       :disabled="isCutting"
+      :aria-label="buttonText"
       @click="handleCut"
+      @keydown.enter.prevent="handleCut"
+      @keydown.space.prevent="handleCut"
     >
       <span class="flex items-center justify-center gap-2">
         <span v-if="!cutCompleted && !isCutting">👨‍🍳</span>

@@ -3,7 +3,7 @@ import { useRouter } from 'vue-router';
 import TopStatusBar from '@/components/TopStatusBar.vue';
 import DishCard from '@/components/DishCard.vue';
 import KitchenScene from '@/components/KitchenScene.vue';
-import { dishes, type Dish } from '@/data/dishes';
+import { dishes, type Dish, getDishById } from '@/data/dishes';
 import { useCookingStore } from '@/stores/cooking';
 import { useProfileStore, ALLERGENS } from '@/stores/profile';
 import { useFavoritesStore, type DishFilterMode, type DishSortMode } from '@/stores/favorites';
@@ -372,6 +372,26 @@ function getSeasonalLabel(dishId: string): string | undefined {
   return info?.limitedLabel;
 }
 
+const lastCookedDish = computed(() => {
+  const record = store.lastCookingRecord;
+  if (!record) return null;
+  const dish = getDishById(record.dishId);
+  if (!dish) return null;
+  return { dish, completedAt: record.completedAt };
+});
+
+function formatTimeAgo(isoString: string): string {
+  const diff = Date.now() - new Date(isoString).getTime();
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  if (minutes < 1) return '刚刚';
+  if (minutes < 60) return `${minutes} 分钟前`;
+  if (hours < 24) return `${hours} 小时前`;
+  if (days < 7) return `${days} 天前`;
+  return new Date(isoString).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+}
+
 function selectDish(id: string) {
   router.push(`/cooking/${id}`);
 }
@@ -425,6 +445,43 @@ function selectDish(id: string) {
         </button>
       </div>
       <KitchenScene />
+    </section>
+
+    <section
+      v-if="lastCookedDish"
+      class="mb-8 animate-fade-slide"
+      style="animation-delay: 0.07s"
+    >
+      <div
+        class="card-soft p-4 hover:shadow-card transition-all duration-300 cursor-pointer ring-2 ring-amber-400/30 bg-amber-400/5"
+        @click="selectDish(lastCookedDish.dish.id)"
+      >
+        <div class="flex items-center gap-4">
+          <div
+            class="w-14 h-14 rounded-xl flex items-center justify-center text-3xl shrink-0"
+            :style="{ background: `linear-gradient(135deg, ${lastCookedDish.dish.color}33, ${lastCookedDish.dish.color}11)` }"
+          >
+            {{ lastCookedDish.dish.emoji }}
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 mb-1">
+              <h4 class="text-display text-base text-brown-900 truncate">
+                再来一道「{{ getLocalizedDishById(lastCookedDish.dish.id)?.name || lastCookedDish.dish.name }}」
+              </h4>
+              <span class="chip bg-amber-400/30 text-amber-700 text-xs shrink-0">
+                <RotateCcw :size="12" />
+                <span class="ml-1">续做</span>
+              </span>
+            </div>
+            <p class="text-xs text-brown-800/60">
+              {{ formatTimeAgo(lastCookedDish.completedAt) }} 刚做过 · 约 {{ lastCookedDish.dish.time }} 分钟 · 难度 {{ '⭐'.repeat(lastCookedDish.dish.difficulty) }}
+            </p>
+          </div>
+          <div class="shrink-0 text-apricot-500">
+            <ChevronRight :size="20" />
+          </div>
+        </div>
+      </div>
     </section>
 
     <Transition name="fade">

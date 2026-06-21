@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { CalendarCheck, Flame, Award, User, BarChart3, Timer, Share2 } from 'lucide-vue-next';
+import { CalendarCheck, Flame, Award, User, BarChart3, Timer, Share2, ChefHat } from 'lucide-vue-next';
 import { useCookingStore } from '@/stores/cooking';
 import { useProfileStore } from '@/stores/profile';
 import { useTimerStore } from '@/stores/timer';
@@ -75,6 +75,15 @@ function getApronBackground(color: string, stripe: string | null): string {
         <div>
           <div class="text-[11px] text-brown-800/60 leading-none">连续打卡</div>
           <div class="text-display text-2xl leading-tight" :class="store.streakDays > 0 ? 'text-apricot-600' : 'text-matcha-600'">{{ store.streakDays }}<span class="text-sm ml-0.5">天</span></div>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 pl-3 border-l border-cream-300">
+        <div class="w-9 h-9 rounded-full bg-amber-500/15 flex items-center justify-center text-amber-600">
+          <ChefHat :size="18" :stroke-width="2.2" />
+        </div>
+        <div>
+          <div class="text-[11px] text-brown-800/60 leading-none">今日烹饪</div>
+          <div class="text-display text-2xl text-amber-600 leading-tight">{{ store.todayCookingCount }}<span class="text-sm ml-0.5">次</span></div>
         </div>
       </div>
     </div>

@@ -102,6 +102,15 @@ export const useCookingStore = defineStore(
 
     const isCheckedInToday = computed(() => lastCheckInDate.value === todayStr());
 
+    const todayCookingCount = computed(() => {
+      const today = todayStr();
+      return cookingHistory.value.filter((r) => r.completedAt.startsWith(today)).length;
+    });
+
+    const lastCookingRecord = computed(() => {
+      return cookingHistory.value.length > 0 ? cookingHistory.value[0] : null;
+    });
+
     const isCheckedInYesterday = computed(() => {
       const yesterday = yesterdayStr();
       return checkInDates.value.includes(yesterday);
@@ -496,6 +505,8 @@ export const useCookingStore = defineStore(
       isCheckedInToday,
       isCheckedInYesterday,
       canMakeupCheckInYesterday,
+      todayCookingCount,
+      lastCookingRecord,
       totalNutrition,
       todayNutrition,
       weekNutrition,

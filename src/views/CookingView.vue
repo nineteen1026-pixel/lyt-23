@@ -78,6 +78,7 @@ const showChallengeReward = ref(false);
 const pendingChallengeBadges = ref<ChallengeBadge[]>([]);
 const afterRewardAction = ref<(() => void) | null>(null);
 const returnToFinishModal = ref(false);
+const makeupSuccess = ref(false);
 const cookingStartTime = ref<number | null>(null);
 const finishDuration = ref(0);
 const finishShareText = ref('');
@@ -244,12 +245,13 @@ function buildUnlockItems(result: UnlockResult): UnlockItem[] {
   return items;
 }
 
-function processCheckInResult(result: UnlockResult, hasMoreActions: boolean) {
+function processCheckInResult(result: UnlockResult, hasMoreActions: boolean, wasMakeup: boolean = false) {
   const items = buildUnlockItems(result);
   const hasSomethingToShow = items.length > 0 || pendingChallengeBadges.value.length > 0;
+  const shouldStayOnModal = hasMoreActions || wasMakeup;
 
   if (hasSomethingToShow) {
-    returnToFinishModal.value = hasMoreActions;
+    returnToFinishModal.value = shouldStayOnModal;
     showFinishModal.value = false;
     if (items.length > 0) {
       pendingUnlockItems.value = items;
@@ -261,7 +263,7 @@ function processCheckInResult(result: UnlockResult, hasMoreActions: boolean) {
         showChallengeReward.value = true;
       }, 300);
     }
-  } else if (!hasMoreActions) {
+  } else if (!shouldStayOnModal) {
     showFinishModal.value = false;
   }
 }
@@ -276,48 +278,52 @@ function handleCheckIn() {
 function handleMakeupCheckIn() {
   if (!store.canMakeupCheckInYesterday) return;
   const result: UnlockResult = store.makeupCheckInYesterday();
+  makeupSuccess.value = true;
   const hasMoreActions = !store.isCheckedInToday;
-  processCheckInResult(result, hasMoreActions);
+  processCheckInResult(result, hasMoreActions, true);
 }
 
-function handleBackHome() {
+function resetModalState() {
   showFinishModal.value = false;
   showUnlockModal.value = false;
-  if (pendingChallengeBadges.value.length > 0 && !showChallengeReward.value) {
-    afterRewardAction.value = () => router.push('/');
-    showChallengeReward.value = true;
-    return;
-  }
   showChallengeReward.value = false;
   pendingChallengeBadges.value = [];
   afterRewardAction.value = null;
+  returnToFinishModal.value = false;
+  makeupSuccess.value = false;
+}
+
+function handleBackHome() {
+  if (pendingChallengeBadges.value.length > 0 && !showChallengeReward.value) {
+    afterRewardAction.value = () => router.push('/');
+    showFinishModal.value = false;
+    showChallengeReward.value = true;
+    return;
+  }
+  resetModalState();
   router.push('/');
 }
 
 function handleCookMore() {
-  showFinishModal.value = false;
-  showUnlockModal.value = false;
   if (pendingChallengeBadges.value.length > 0 && !showChallengeReward.value) {
     afterRewardAction.value = () => router.push('/');
+    showFinishModal.value = false;
     showChallengeReward.value = true;
     return;
   }
-  showChallengeReward.value = false;
-  pendingChallengeBadges.value = [];
-  afterRewardAction.value = null;
+  resetModalState();
   router.push('/');
 }
 
 function handleUnlockModalClose() {
   showUnlockModal.value = false;
+  if (pendingChallengeBadges.value.length > 0 && !showChallengeReward.value) {
+    showChallengeReward.value = true;
+    return;
+  }
   if (returnToFinishModal.value) {
     returnToFinishModal.value = false;
     showFinishModal.value = true;
-    return;
-  }
-  if (pendingChallengeBadges.value.length > 0 && !showChallengeReward.value) {
-    afterRewardAction.value = () => router.push('/');
-    showChallengeReward.value = true;
     return;
   }
   router.push('/');
@@ -325,14 +331,14 @@ function handleUnlockModalClose() {
 
 function handleCloseChallengeReward() {
   showChallengeReward.value = false;
-  const action = afterRewardAction.value;
   pendingChallengeBadges.value = [];
-  afterRewardAction.value = null;
   if (returnToFinishModal.value) {
     returnToFinishModal.value = false;
     showFinishModal.value = true;
     return;
   }
+  const action = afterRewardAction.value;
+  afterRewardAction.value = null;
   if (action) {
     action();
   }
@@ -636,6 +642,7 @@ function handleSaveNote(data: { content: string; rating: 1 | 2 | 3 | 4 | 5 }) {
           :is-checked-in-today="store.isCheckedInToday"
           :can-makeup-check-in-yesterday="store.canMakeupCheckInYesterday"
           :protection-count="store.protectionCount"
+          :makeup-check-in-success="makeupSuccess"
           :duration-seconds="finishDuration"
           :share-text="finishShareText"
           :plate-decorations="plateDecorations"

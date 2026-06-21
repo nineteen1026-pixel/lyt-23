@@ -12,6 +12,7 @@ const props = defineProps<{
   isCheckedInToday: boolean;
   canMakeupCheckInYesterday?: boolean;
   protectionCount?: number;
+  makeupCheckInSuccess?: boolean;
   durationSeconds?: number;
   shareText?: string;
   plateDecorations?: string[];
@@ -172,6 +173,21 @@ async function handleCopy() {
                 </span>
               </button>
             </div>
+
+            <Transition name="fade">
+              <div
+                v-if="makeupCheckInSuccess"
+                class="mb-4 px-4 py-3 rounded-2xl flex items-center gap-2 animate-fade-slide"
+                style="background: linear-gradient(135deg, #D4EDDA 0%, #C3E6CB 100%); border: 1px solid #B1DFBB;"
+              >
+                <span class="text-lg">🛡️</span>
+                <div class="flex-1">
+                  <div class="text-sm font-bold text-green-800">昨日补签成功！</div>
+                  <div class="text-xs text-green-700/70">连续打卡已恢复，保护次数已消耗 1 次</div>
+                </div>
+                <span class="text-green-600 text-lg">✓</span>
+              </div>
+            </Transition>
 
             <div class="mb-6 space-y-2">
               <div

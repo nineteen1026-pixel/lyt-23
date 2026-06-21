@@ -77,6 +77,7 @@ const showNoteEditor = ref(false);
 const showChallengeReward = ref(false);
 const pendingChallengeBadges = ref<ChallengeBadge[]>([]);
 const afterRewardAction = ref<(() => void) | null>(null);
+const returnToFinishModal = ref(false);
 const cookingStartTime = ref<number | null>(null);
 const finishDuration = ref(0);
 const finishShareText = ref('');
@@ -222,7 +223,7 @@ function goNext() {
   }
 }
 
-function processUnlockResult(result: UnlockResult) {
+function buildUnlockItems(result: UnlockResult): UnlockItem[] {
   const items: UnlockItem[] = [];
   (result.newDecorations as Decoration[]).forEach((d) => {
     items.push({ type: 'decoration', name: d.name, emoji: d.emoji });
@@ -240,30 +241,43 @@ function processUnlockResult(result: UnlockResult) {
       items.push({ type: 'counter', name: c.name, emoji: c.emoji });
     });
   }
+  return items;
+}
 
-  showFinishModal.value = false;
-  if (items.length > 0) {
-    pendingUnlockItems.value = items;
-    setTimeout(() => {
-      showUnlockModal.value = true;
-    }, 300);
-  } else if (pendingChallengeBadges.value.length > 0) {
-    setTimeout(() => {
-      showChallengeReward.value = true;
-    }, 300);
+function processCheckInResult(result: UnlockResult, hasMoreActions: boolean) {
+  const items = buildUnlockItems(result);
+  const hasSomethingToShow = items.length > 0 || pendingChallengeBadges.value.length > 0;
+
+  if (hasSomethingToShow) {
+    returnToFinishModal.value = hasMoreActions;
+    showFinishModal.value = false;
+    if (items.length > 0) {
+      pendingUnlockItems.value = items;
+      setTimeout(() => {
+        showUnlockModal.value = true;
+      }, 300);
+    } else {
+      setTimeout(() => {
+        showChallengeReward.value = true;
+      }, 300);
+    }
+  } else if (!hasMoreActions) {
+    showFinishModal.value = false;
   }
 }
 
 function handleCheckIn() {
   if (store.isCheckedInToday) return;
   const result: UnlockResult = store.checkIn();
-  processUnlockResult(result);
+  const hasMoreActions = store.canMakeupCheckInYesterday;
+  processCheckInResult(result, hasMoreActions);
 }
 
 function handleMakeupCheckIn() {
   if (!store.canMakeupCheckInYesterday) return;
   const result: UnlockResult = store.makeupCheckInYesterday();
-  processUnlockResult(result);
+  const hasMoreActions = !store.isCheckedInToday;
+  processCheckInResult(result, hasMoreActions);
 }
 
 function handleBackHome() {
@@ -294,11 +308,31 @@ function handleCookMore() {
   router.push('/');
 }
 
+function handleUnlockModalClose() {
+  showUnlockModal.value = false;
+  if (returnToFinishModal.value) {
+    returnToFinishModal.value = false;
+    showFinishModal.value = true;
+    return;
+  }
+  if (pendingChallengeBadges.value.length > 0 && !showChallengeReward.value) {
+    afterRewardAction.value = () => router.push('/');
+    showChallengeReward.value = true;
+    return;
+  }
+  router.push('/');
+}
+
 function handleCloseChallengeReward() {
   showChallengeReward.value = false;
   const action = afterRewardAction.value;
   pendingChallengeBadges.value = [];
   afterRewardAction.value = null;
+  if (returnToFinishModal.value) {
+    returnToFinishModal.value = false;
+    showFinishModal.value = true;
+    return;
+  }
   if (action) {
     action();
   }
@@ -618,7 +652,7 @@ function handleSaveNote(data: { content: string; rating: 1 | 2 | 3 | 4 | 5 }) {
         <UnlockModal
           v-if="showUnlockModal"
           :new-items="pendingUnlockItems"
-          @close="handleBackHome"
+          @close="handleUnlockModalClose"
         />
       </Transition>
 

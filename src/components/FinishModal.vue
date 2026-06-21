@@ -181,35 +181,35 @@ async function handleCopy() {
                 <span>✓</span>
                 <span>今日已打卡</span>
               </div>
-              <template v-else>
-                <button
-                  class="w-full py-4 rounded-2xl text-white font-bold text-lg shadow-lg active:translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                  :disabled="isCheckedInToday"
-                  style="background: linear-gradient(135deg, #FFA66D 0%, #FF8C42 50%, #F57C2E 100%); box-shadow: 0 6px 0 rgba(245, 124, 46, 0.4);"
-                  @click="emit('checkIn')"
-                >
-                  📅 立即打卡！
-                </button>
-                <button
-                  v-if="canMakeupCheckInYesterday"
-                  class="w-full py-3 rounded-2xl text-sm font-medium shadow-md active:translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2"
-                  style="background: linear-gradient(135deg, #A7C957 0%, #6BCB77 100%); color: white; box-shadow: 0 4px 0 rgba(107, 203, 119, 0.4);"
-                  @click="emit('makeupCheckIn')"
-                >
-                  <span>🛡️</span>
-                  <span>补签昨日（消耗 1 次保护）</span>
-                  <span class="text-xs bg-white/25 px-2 py-0.5 rounded-full">
-                    剩余 {{ protectionCount }} 次
-                  </span>
-                </button>
-                <div
-                  v-else-if="protectionCount != null && protectionCount <= 0"
-                  class="text-xs text-brown-800/50 text-center flex items-center justify-center gap-1"
-                >
-                  <span>🛡️</span>
-                  <span>保护次数已用完</span>
-                </div>
-              </template>
+              <button
+                v-else
+                class="w-full py-4 rounded-2xl text-white font-bold text-lg shadow-lg active:translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                :disabled="isCheckedInToday"
+                style="background: linear-gradient(135deg, #FFA66D 0%, #FF8C42 50%, #F57C2E 100%); box-shadow: 0 6px 0 rgba(245, 124, 46, 0.4);"
+                @click="emit('checkIn')"
+              >
+                📅 立即打卡！
+              </button>
+
+              <button
+                v-if="canMakeupCheckInYesterday"
+                class="w-full py-3 rounded-2xl text-sm font-medium shadow-md active:translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2"
+                style="background: linear-gradient(135deg, #A7C957 0%, #6BCB77 100%); color: white; box-shadow: 0 4px 0 rgba(107, 203, 119, 0.4);"
+                @click="emit('makeupCheckIn')"
+              >
+                <span>🛡️</span>
+                <span>补签昨日（消耗 1 次保护）</span>
+                <span class="text-xs bg-white/25 px-2 py-0.5 rounded-full">
+                  剩余 {{ protectionCount }} 次
+                </span>
+              </button>
+              <div
+                v-else-if="protectionCount != null && protectionCount <= 0"
+                class="text-xs text-brown-800/50 text-center flex items-center justify-center gap-1"
+              >
+                <span>🛡️</span>
+                <span>保护次数已用完</span>
+              </div>
             </div>
           </div>
         </div>

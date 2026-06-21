@@ -345,30 +345,47 @@ export const useCookingStore = defineStore(
       return { newDecorations, newAprons, newBackgrounds, newCounters };
     }
 
+    function recalculateStreak(): void {
+      const dateSet = new Set(checkInDates.value);
+      if (dateSet.size === 0) {
+        streakDays.value = 0;
+        return;
+      }
+
+      let streak = 0;
+      const d = new Date();
+      let checkDate = todayStr();
+
+      if (!dateSet.has(checkDate)) {
+        d.setDate(d.getDate() - 1);
+        checkDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      }
+
+      while (dateSet.has(checkDate)) {
+        streak++;
+        d.setDate(d.getDate() - 1);
+        checkDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      }
+
+      streakDays.value = streak;
+    }
+
     function makeupCheckInYesterday(): UnlockResult {
       const emptyResult: UnlockResult = { newDecorations: [], newAprons: [], newBackgrounds: [], newCounters: [] };
       if (!canMakeupCheckInYesterday.value) return emptyResult;
 
       const yesterday = yesterdayStr();
       const prevTotal = totalDays.value;
-      const dayBeforeYesterday = (() => {
-        const d = new Date();
-        d.setDate(d.getDate() - 2);
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-      })();
-
-      if (checkInDates.value.includes(dayBeforeYesterday)) {
-        streakDays.value += 1;
-      } else {
-        streakDays.value = 1;
-      }
 
       totalDays.value += 1;
-      lastCheckInDate.value = yesterday;
+      if (lastCheckInDate.value !== todayStr()) {
+        lastCheckInDate.value = yesterday;
+      }
       checkInDates.value.push(yesterday);
       if (checkInDates.value.length > 365) {
         checkInDates.value = checkInDates.value.slice(-365);
       }
+      recalculateStreak();
 
       protectionCount.value -= 1;
       lastMakeupCheckInMonth.value = currentMonthKey();

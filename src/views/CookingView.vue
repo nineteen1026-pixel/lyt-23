@@ -222,9 +222,7 @@ function goNext() {
   }
 }
 
-function handleCheckIn() {
-  if (store.isCheckedInToday) return;
-  const result: UnlockResult = store.checkIn();
+function processUnlockResult(result: UnlockResult) {
   const items: UnlockItem[] = [];
   (result.newDecorations as Decoration[]).forEach((d) => {
     items.push({ type: 'decoration', name: d.name, emoji: d.emoji });
@@ -254,6 +252,18 @@ function handleCheckIn() {
       showChallengeReward.value = true;
     }, 300);
   }
+}
+
+function handleCheckIn() {
+  if (store.isCheckedInToday) return;
+  const result: UnlockResult = store.checkIn();
+  processUnlockResult(result);
+}
+
+function handleMakeupCheckIn() {
+  if (!store.canMakeupCheckInYesterday) return;
+  const result: UnlockResult = store.makeupCheckInYesterday();
+  processUnlockResult(result);
 }
 
 function handleBackHome() {
@@ -590,11 +600,14 @@ function handleSaveNote(data: { content: string; rating: 1 | 2 | 3 | 4 | 5 }) {
           :dish-emoji="dish.emoji"
           :dish-name="localizedDish?.name || dish.name"
           :is-checked-in-today="store.isCheckedInToday"
+          :can-makeup-check-in-yesterday="store.canMakeupCheckInYesterday"
+          :protection-count="store.protectionCount"
           :duration-seconds="finishDuration"
           :share-text="finishShareText"
           :plate-decorations="plateDecorations"
           :dish="dish"
           @check-in="handleCheckIn"
+          @makeup-check-in="handleMakeupCheckIn"
           @back-home="handleBackHome"
           @cook-more="handleCookMore"
           @write-note="handleWriteNote"

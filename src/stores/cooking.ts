@@ -63,6 +63,22 @@ function isYesterday(dateStr: string): boolean {
   );
 }
 
+function yesterdayStr(): string {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function currentMonthKey(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function isSameMonth(dateStr: string, monthKey: string): boolean {
+  const [y, m] = dateStr.split('-');
+  return `${y}-${m}` === monthKey;
+}
+
 export const useCookingStore = defineStore(
   'cooking',
   () => {
@@ -70,6 +86,9 @@ export const useCookingStore = defineStore(
     const streakDays = ref(0);
     const lastCheckInDate = ref<string | null>(null);
     const checkInDates = ref<string[]>([]);
+    const protectionCount = ref(3);
+    const lastMakeupCheckInMonth = ref<string | null>(null);
+    const makeupCheckInDates = ref<string[]>([]);
     const cookingHistory = ref<CookingRecord[]>([]);
     const notes = ref<Note[]>([]);
     const unlockedDecorations = ref<string[]>([]);
@@ -82,6 +101,19 @@ export const useCookingStore = defineStore(
     const activeCounter = ref<string>('wood-light');
 
     const isCheckedInToday = computed(() => lastCheckInDate.value === todayStr());
+
+    const isCheckedInYesterday = computed(() => {
+      const yesterday = yesterdayStr();
+      return checkInDates.value.includes(yesterday);
+    });
+
+    const canMakeupCheckInYesterday = computed(() => {
+      if (isCheckedInYesterday.value) return false;
+      if (protectionCount.value <= 0) return false;
+      const monthKey = currentMonthKey();
+      if (lastMakeupCheckInMonth.value && isSameMonth(lastMakeupCheckInMonth.value, monthKey)) return false;
+      return true;
+    });
 
     const activeBackgroundData = computed(() =>
       getBackgroundById(activeBackground.value) ?? getDefaultBackground(),
@@ -313,6 +345,62 @@ export const useCookingStore = defineStore(
       return { newDecorations, newAprons, newBackgrounds, newCounters };
     }
 
+    function makeupCheckInYesterday(): UnlockResult {
+      const emptyResult: UnlockResult = { newDecorations: [], newAprons: [], newBackgrounds: [], newCounters: [] };
+      if (!canMakeupCheckInYesterday.value) return emptyResult;
+
+      const yesterday = yesterdayStr();
+      const prevTotal = totalDays.value;
+      const dayBeforeYesterday = (() => {
+        const d = new Date();
+        d.setDate(d.getDate() - 2);
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      })();
+
+      if (checkInDates.value.includes(dayBeforeYesterday)) {
+        streakDays.value += 1;
+      } else {
+        streakDays.value = 1;
+      }
+
+      totalDays.value += 1;
+      lastCheckInDate.value = yesterday;
+      checkInDates.value.push(yesterday);
+      if (checkInDates.value.length > 365) {
+        checkInDates.value = checkInDates.value.slice(-365);
+      }
+
+      protectionCount.value -= 1;
+      lastMakeupCheckInMonth.value = currentMonthKey();
+      makeupCheckInDates.value.push(yesterday);
+
+      const { newDecorations, newAprons } = checkNewUnlocks(prevTotal, totalDays.value);
+      if (newDecorations.length > 0) {
+        unlockedDecorations.value = Array.from(
+          new Set([...unlockedDecorations.value, ...newDecorations.map((d) => d.id)]),
+        );
+      }
+      if (newAprons.length > 0) {
+        unlockedAprons.value = Array.from(
+          new Set([...unlockedAprons.value, ...newAprons.map((a) => a.id)]),
+        );
+      }
+
+      const { newBackgrounds, newCounters } = checkNewThemeUnlocks(prevTotal, totalDays.value);
+      if (newBackgrounds.length > 0) {
+        unlockedBackgrounds.value = Array.from(
+          new Set([...unlockedBackgrounds.value, ...newBackgrounds.map((b) => b.id)]),
+        );
+      }
+      if (newCounters.length > 0) {
+        unlockedCounters.value = Array.from(
+          new Set([...unlockedCounters.value, ...newCounters.map((c) => c.id)]),
+        );
+      }
+
+      return { newDecorations, newAprons, newBackgrounds, newCounters };
+    }
+
     function toggleDecoration(id: string): void {
       if (!unlockedDecorations.value.includes(id)) return;
       activeDecoration.value = activeDecoration.value === id ? null : id;
@@ -372,6 +460,9 @@ export const useCookingStore = defineStore(
       streakDays,
       lastCheckInDate,
       checkInDates,
+      protectionCount,
+      lastMakeupCheckInMonth,
+      makeupCheckInDates,
       cookingHistory,
       notes,
       recentNotes,
@@ -386,6 +477,8 @@ export const useCookingStore = defineStore(
       activeBackgroundData,
       activeCounterData,
       isCheckedInToday,
+      isCheckedInYesterday,
+      canMakeupCheckInYesterday,
       totalNutrition,
       todayNutrition,
       weekNutrition,
@@ -397,6 +490,7 @@ export const useCookingStore = defineStore(
       searchNotes,
       getNotesByDish,
       checkIn,
+      makeupCheckInYesterday,
       toggleDecoration,
       setActiveApron,
       setActiveBackground,

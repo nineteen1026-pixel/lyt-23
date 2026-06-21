@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { ArrowLeft, User, AlertTriangle, Sparkles, RotateCcw, Volume2, Globe, MessageSquareHeart } from 'lucide-vue-next';
 import {
   useProfileStore,
@@ -23,6 +24,7 @@ import LanguageSelector from '@/components/settings/LanguageSelector.vue';
 import FeedbackForm from '@/components/feedback/FeedbackForm.vue';
 import FeedbackQueue from '@/components/feedback/FeedbackQueue.vue';
 
+const { t } = useI18n();
 const router = useRouter();
 const profileStore = useProfileStore();
 const settingsStore = useSettingsStore();
@@ -346,8 +348,8 @@ function handleReset() {
     <section class="mb-10 animate-fade-slide" style="animation-delay: 0.2s">
       <div class="flex items-center gap-2 mb-4">
         <MessageSquareHeart class="text-apricot-500" :size="22" />
-        <h2 class="text-display text-xl text-brown-900">意见反馈</h2>
-        <span class="text-xs text-brown-800/60 ml-1">（您的声音让小厨房变得更好）</span>
+        <h2 class="text-display text-xl text-brown-900">{{ t('feedback.title') }}</h2>
+        <span class="text-xs text-brown-800/60 ml-1">（{{ t('feedback.subtitle') }}）</span>
       </div>
       <div class="grid md:grid-cols-2 gap-5">
         <FeedbackForm />

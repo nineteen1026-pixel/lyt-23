@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { Inbox, Download, Trash2, Star, FileJson, FileSpreadsheet, ChevronDown, ChevronUp } from 'lucide-vue-next';
+import { useI18n } from 'vue-i18n';
+import { Inbox, Trash2, Star, FileJson, FileSpreadsheet, ChevronDown, ChevronUp } from 'lucide-vue-next';
 import { useFeedbackStore, FEEDBACK_CATEGORIES } from '@/stores/feedback';
 import { useToastStore } from '@/stores/toast';
+import { useLocaleStore } from '@/stores/locale';
 
+const { t } = useI18n();
 const feedbackStore = useFeedbackStore();
 const toastStore = useToastStore();
+const localeStore = useLocaleStore();
 
 const expanded = ref(true);
 const confirmClear = ref(false);
@@ -18,20 +22,25 @@ const averageRatingDisplay = computed(() => {
 
 function getCategoryLabel(value?: string) {
   const cat = FEEDBACK_CATEGORIES.find((c) => c.value === value);
-  return cat ? `${cat.emoji} ${cat.label}` : '未分类';
+  if (cat) {
+    return `${cat.emoji} ${t(`feedback.form.categories.${cat.value}` as Parameters<typeof t>[0])}`;
+  }
+  return t('feedback.queue.uncategorized');
 }
 
 function formatDate(timestamp: number) {
-  const date = new Date(timestamp);
   const now = new Date();
   const diff = now.getTime() - timestamp;
 
-  if (diff < 60 * 1000) return '刚刚';
-  if (diff < 60 * 60 * 1000) return `${Math.floor(diff / (60 * 1000))} 分钟前`;
-  if (diff < 24 * 60 * 60 * 1000) return `${Math.floor(diff / (60 * 60 * 1000))} 小时前`;
-  if (diff < 7 * 24 * 60 * 60 * 1000) return `${Math.floor(diff / (24 * 60 * 60 * 1000))} 天前`;
+  if (diff < 60 * 1000) return t('feedback.queue.timeJustNow');
+  if (diff < 60 * 60 * 1000)
+    return t('feedback.queue.timeMinutesAgo', { n: Math.floor(diff / (60 * 1000)) });
+  if (diff < 24 * 60 * 60 * 1000)
+    return t('feedback.queue.timeHoursAgo', { n: Math.floor(diff / (60 * 60 * 1000)) });
+  if (diff < 7 * 24 * 60 * 60 * 1000)
+    return t('feedback.queue.timeDaysAgo', { n: Math.floor(diff / (24 * 60 * 60 * 1000)) });
 
-  return date.toLocaleDateString('zh-CN', {
+  return new Date(timestamp).toLocaleDateString(localeStore.isZh ? 'zh-CN' : 'en-US', {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
@@ -41,23 +50,23 @@ function formatDate(timestamp: number) {
 
 function handleRemove(id: string) {
   feedbackStore.removeFeedback(id);
-  toastStore.info('已删除该反馈', '🗑️');
+  toastStore.info(t('feedback.queue.deleted'), '🗑️');
 }
 
 function handleClearAll() {
   feedbackStore.clearAll();
   confirmClear.value = false;
-  toastStore.success('已清空全部反馈', '✨');
+  toastStore.success(t('feedback.queue.clearSuccess'), '✨');
 }
 
 function handleExportJson() {
   feedbackStore.downloadJson();
-  toastStore.success('已导出 JSON 文件', '📄');
+  toastStore.success(t('feedback.queue.exportSuccessJson'), '📄');
 }
 
 function handleExportCsv() {
   feedbackStore.downloadCsv();
-  toastStore.success('已导出 CSV 文件', '📊');
+  toastStore.success(t('feedback.queue.exportSuccessCsv'), '📊');
 }
 </script>
 
@@ -69,7 +78,7 @@ function handleExportCsv() {
         @click="expanded = !expanded"
       >
         <Inbox class="text-apricot-500" :size="22" />
-        <h3 class="text-display text-lg text-brown-900">反馈队列</h3>
+        <h3 class="text-display text-lg text-brown-900">{{ t('feedback.queue.title') }}</h3>
         <span
           v-if="feedbackStore.count > 0"
           class="px-2 py-0.5 text-xs rounded-full bg-apricot-100 text-apricot-700 font-medium"
@@ -86,7 +95,7 @@ function handleExportCsv() {
       <div v-if="feedbackStore.count > 0" class="flex items-center gap-2">
         <div class="text-sm text-brown-800/60 flex items-center gap-1">
           <Star :size="14" class="text-yellow-400 fill-yellow-400" />
-          平均 {{ averageRatingDisplay }}
+          {{ t('feedback.queue.average') }} {{ averageRatingDisplay }}
         </div>
       </div>
     </div>
@@ -98,7 +107,7 @@ function handleExportCsv() {
       >
         <div class="text-5xl mb-3">📭</div>
         <div class="text-sm text-brown-800/60">
-          还没有提交任何反馈哦～
+          {{ t('feedback.queue.empty') }}
         </div>
       </div>
 
@@ -109,14 +118,14 @@ function handleExportCsv() {
             @click="handleExportJson"
           >
             <FileJson :size="16" />
-            导出 JSON
+            {{ t('feedback.queue.exportJson') }}
           </button>
           <button
             class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-300 border-2 active:scale-95 bg-matcha-50 border-matcha-200 text-matcha-700 hover:bg-matcha-100"
             @click="handleExportCsv"
           >
             <FileSpreadsheet :size="16" />
-            导出 CSV
+            {{ t('feedback.queue.exportCsv') }}
           </button>
 
           <div class="flex-1" />
@@ -127,22 +136,22 @@ function handleExportCsv() {
               @click="confirmClear = true"
             >
               <Trash2 :size="16" />
-              清空全部
+              {{ t('feedback.queue.clearAll') }}
             </button>
           </div>
           <div v-else class="flex items-center gap-2">
-            <span class="text-xs text-brown-800/60">确认清空？</span>
+            <span class="text-xs text-brown-800/60">{{ t('feedback.queue.clearConfirm') }}</span>
             <button
               class="px-3 py-2 rounded-xl text-xs font-medium bg-rose-500 text-white hover:bg-rose-600 active:scale-95 transition-all"
               @click="handleClearAll"
             >
-              确认
+              {{ t('feedback.queue.confirm') }}
             </button>
             <button
               class="px-3 py-2 rounded-xl text-xs font-medium bg-cream-200 text-brown-800/70 hover:bg-cream-300 active:scale-95 transition-all"
               @click="confirmClear = false"
             >
-              取消
+              {{ t('feedback.queue.cancel') }}
             </button>
           </div>
         </div>
@@ -155,7 +164,7 @@ function handleExportCsv() {
           >
             <div class="flex items-start justify-between gap-3">
               <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2 mb-2">
+                <div class="flex items-center gap-2 mb-2 flex-wrap">
                   <div class="flex items-center gap-0.5">
                     <Star
                       v-for="s in 5"

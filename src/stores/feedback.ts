@@ -1,5 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
+import { i18n } from '@/i18n';
+import type { Locale } from '@/i18n/types';
 
 export type FeedbackRating = 1 | 2 | 3 | 4 | 5;
 
@@ -19,8 +21,80 @@ export const FEEDBACK_CATEGORIES: { value: string; label: string; emoji: string 
   { value: 'other', label: '其他', emoji: '💬' },
 ];
 
+const CATEGORY_LABELS_ZH: Record<string, string> = {
+  experience: '整体体验',
+  dish: '菜品建议',
+  feature: '功能建议',
+  bug: '问题反馈',
+  other: '其他',
+};
+
+const CATEGORY_LABELS_EN: Record<string, string> = {
+  experience: 'Overall Experience',
+  dish: 'Dish Suggestion',
+  feature: 'Feature Request',
+  bug: 'Bug Report',
+  other: 'Other',
+};
+
+const RATING_LABELS_ZH: Record<number, string> = {
+  1: '很不满意 😞',
+  2: '不太满意 😕',
+  3: '一般般 🙂',
+  4: '比较满意 😊',
+  5: '非常满意 🥰',
+};
+
+const RATING_LABELS_EN: Record<number, string> = {
+  1: 'Very Unsatisfied 😞',
+  2: 'Not Great 😕',
+  3: 'Just Okay 🙂',
+  4: 'Pretty Good 😊',
+  5: 'Excellent 🥰',
+};
+
 function generateId(): string {
   return `fb_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+}
+
+function getCurrentLocale(): Locale {
+  try {
+    return (i18n.global.locale as { value: Locale }).value ?? 'zh-CN';
+  } catch {
+    return 'zh-CN';
+  }
+}
+
+function getCategoryLabelLocalized(value?: string, locale?: Locale): string {
+  const loc = locale ?? getCurrentLocale();
+  if (!value) {
+    return loc === 'zh-CN' ? '未分类' : 'Uncategorized';
+  }
+  const map = loc === 'zh-CN' ? CATEGORY_LABELS_ZH : CATEGORY_LABELS_EN;
+  return map[value] ?? value;
+}
+
+function getRatingLabelLocalized(rating: FeedbackRating, locale?: Locale): string {
+  const loc = locale ?? getCurrentLocale();
+  const map = loc === 'zh-CN' ? RATING_LABELS_ZH : RATING_LABELS_EN;
+  return map[rating] ?? String(rating);
+}
+
+function getRatingWithLabel(rating: FeedbackRating, locale?: Locale): string {
+  return `${rating} - ${getRatingLabelLocalized(rating, locale)}`;
+}
+
+function formatDateLocalized(timestamp: number, locale?: Locale): string {
+  const loc = locale ?? getCurrentLocale();
+  const localeTag = loc === 'zh-CN' ? 'zh-CN' : 'en-US';
+  return new Date(timestamp).toLocaleString(localeTag, {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
 }
 
 export const useFeedbackStore = defineStore(
@@ -68,13 +142,27 @@ export const useFeedbackStore = defineStore(
     }
 
     function exportToJson(): string {
+      const locale = getCurrentLocale();
+      const locStr = locale === 'zh-CN' ? 'zh-CN' : 'en-US';
+
       const data = {
         exportedAt: new Date().toISOString(),
+        exportedAtFormatted: formatDateLocalized(Date.now(), locale),
+        exportLanguage: locStr,
         totalCount: queue.value.length,
         averageRating: averageRating.value,
+        averageRatingDisplay:
+          averageRating.value > 0 ? averageRating.value.toFixed(2) : '—',
         feedbacks: sortedQueue.value.map((item) => ({
-          ...item,
-          createdAtFormatted: new Date(item.createdAt).toLocaleString('zh-CN'),
+          id: item.id,
+          rating: item.rating,
+          ratingLabel: getRatingLabelLocalized(item.rating, locale),
+          ratingDisplay: getRatingWithLabel(item.rating, locale),
+          categoryKey: item.category ?? null,
+          category: getCategoryLabelLocalized(item.category, locale),
+          content: item.content,
+          createdAt: item.createdAt,
+          createdAtFormatted: formatDateLocalized(item.createdAt, locale),
         })),
       };
       return JSON.stringify(data, null, 2);
@@ -96,14 +184,31 @@ export const useFeedbackStore = defineStore(
     }
 
     function exportToCsv(): string {
-      const headers = ['ID', '评分', '分类', '内容', '提交时间'];
+      const locale = getCurrentLocale();
+      const isZh = locale === 'zh-CN';
+
+      const headers = [
+        isZh ? 'ID' : 'ID',
+        isZh ? '评分' : 'Rating',
+        isZh ? '评分描述' : 'Rating Label',
+        isZh ? '分类代码' : 'Category Key',
+        isZh ? '分类' : 'Category',
+        isZh ? '建议内容' : 'Content',
+        isZh ? '提交时间戳' : 'Timestamp',
+        isZh ? '提交时间' : 'Submitted At',
+      ];
+
       const rows = sortedQueue.value.map((item) => [
         item.id,
         String(item.rating),
+        `"${getRatingLabelLocalized(item.rating, locale).replace(/"/g, '""')}"`,
         item.category ?? '',
+        `"${getCategoryLabelLocalized(item.category, locale).replace(/"/g, '""')}"`,
         `"${(item.content ?? '').replace(/"/g, '""')}"`,
-        new Date(item.createdAt).toLocaleString('zh-CN'),
+        String(item.createdAt),
+        `"${formatDateLocalized(item.createdAt, locale).replace(/"/g, '""')}"`,
       ]);
+
       return [headers, ...rows].map((row) => row.join(',')).join('\n');
     }
 

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { Star, Send, MessageSquareHeart } from 'lucide-vue-next';
 import {
   useFeedbackStore,
@@ -12,6 +13,7 @@ const emit = defineEmits<{
   submitted: [];
 }>();
 
+const { t } = useI18n();
 const feedbackStore = useFeedbackStore();
 const toastStore = useToastStore();
 
@@ -26,13 +28,20 @@ const canSubmit = computed(() => rating.value !== null && content.value.trim().l
 
 const displayRating = computed(() => hoverRating.value ?? rating.value);
 
-const ratingLabels: Record<FeedbackRating, string> = {
-  1: '很不满意 😞',
-  2: '不太满意 😕',
-  3: '一般般 🙂',
-  4: '比较满意 😊',
-  5: '非常满意 🥰',
-};
+const ratingLabels = computed<Record<FeedbackRating, string>>(() => ({
+  1: t('feedback.form.ratingLabels.1'),
+  2: t('feedback.form.ratingLabels.2'),
+  3: t('feedback.form.ratingLabels.3'),
+  4: t('feedback.form.ratingLabels.4'),
+  5: t('feedback.form.ratingLabels.5'),
+}));
+
+const localizedCategories = computed(() =>
+  FEEDBACK_CATEGORIES.map((cat) => ({
+    ...cat,
+    label: t(`feedback.form.categories.${cat.value}` as Parameters<typeof t>[0]),
+  })),
+);
 
 function setRating(value: FeedbackRating) {
   rating.value = value;
@@ -51,7 +60,7 @@ function handleSubmit() {
     category: category.value,
   });
 
-  toastStore.success('感谢您的反馈！已保存到本地队列', '💌');
+  toastStore.success(t('feedback.form.submitSuccess'), '💌');
 
   rating.value = null;
   content.value = '';
@@ -65,13 +74,13 @@ function handleSubmit() {
   <div class="card-soft p-5">
     <div class="flex items-center gap-2 mb-5">
       <MessageSquareHeart class="text-apricot-500" :size="22" />
-      <h3 class="text-display text-lg text-brown-900">提交反馈</h3>
+      <h3 class="text-display text-lg text-brown-900">{{ t('feedback.form.title') }}</h3>
     </div>
 
     <div class="space-y-5">
       <div>
         <label class="block text-sm font-medium text-brown-900 mb-3">
-          体验评分
+          {{ t('feedback.form.rating') }}
           <span class="text-rose-500">*</span>
         </label>
         <div class="flex flex-col items-center gap-2 py-3 bg-cream-50 rounded-2xl">
@@ -103,18 +112,18 @@ function handleSubmit() {
             {{ ratingLabels[displayRating] }}
           </div>
           <div v-else class="text-xs text-brown-800/50 h-5">
-            点击星星为体验打分
+            {{ t('feedback.form.ratingHint') }}
           </div>
         </div>
       </div>
 
       <div>
         <label class="block text-sm font-medium text-brown-900 mb-3">
-          反馈分类
+          {{ t('feedback.form.category') }}
         </label>
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
           <button
-            v-for="cat in FEEDBACK_CATEGORIES"
+            v-for="cat in localizedCategories"
             :key="cat.value"
             class="py-2.5 px-2 rounded-xl text-sm transition-all duration-300 border-2 active:scale-95"
             :class="{
@@ -134,7 +143,7 @@ function handleSubmit() {
       <div>
         <div class="flex items-center justify-between mb-3">
           <label class="text-sm font-medium text-brown-900">
-            详细建议
+            {{ t('feedback.form.content') }}
             <span class="text-rose-500">*</span>
           </label>
           <span
@@ -148,7 +157,7 @@ function handleSubmit() {
           v-model="content"
           :maxlength="MAX_CONTENT_LENGTH"
           rows="4"
-          placeholder="说说您的想法和建议，帮助我们做得更好～"
+          :placeholder="t('feedback.form.contentPlaceholder')"
           class="w-full px-4 py-3 rounded-2xl border-2 border-cream-300 bg-white text-sm text-brown-900 placeholder:text-brown-800/40 focus:border-apricot-400 focus:outline-none focus:ring-2 focus:ring-apricot-200 resize-none transition-all"
         />
       </div>
@@ -164,7 +173,7 @@ function handleSubmit() {
         @click="handleSubmit"
       >
         <Send :size="16" />
-        提交反馈
+        {{ t('feedback.form.submit') }}
       </button>
     </div>
   </div>
